@@ -43,7 +43,7 @@ git init
 git add .
 git commit -m "Initial taskflow-api scaffold"
 git branch -M main
-git remote add origin git@github.com:<your-username>/taskflow-api.git
+git remote add origin https://github.com/Nekokun2004/jenkins-lab.git
 git push -u origin main
 ```
 
