@@ -1,2 +1,25 @@
+# Dependencies
+node_modules/
+
+# Test / coverage output
+coverage/
+reports/
+junit.xml
+
+# Env / secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Jenkins backups and downloaded tools (large, may contain live secrets)
 jenkins_home.tgz
 agent.jar
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+.vscode/
+.idea/
