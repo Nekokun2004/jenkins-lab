@@ -5,6 +5,36 @@
 
 ---
 
+## 0. Restart container หลัก 2 ตัวที่ใช้อยู่ (`jenkins` + agent)
+
+ใช้บ่อยสุด เวลา container ค้าง/ดับ หรือแก้ config แล้วอยากให้ Jenkins โหลดใหม่:
+
+```bash
+# Jenkins controller
+docker restart jenkins
+
+# Jenkins agent (linux-build)
+docker restart jenkins-agent-linux-build
+```
+
+**ถ้า `docker restart` ไม่ขึ้น** (เช่น container โดน exit ค้างจาก Jenkins สั่ง restart ตัวเองข้างใน UI แล้วไม่มีใครสั่งเปิดกลับ) ให้เช็คสถานะก่อนแล้วค่อย `docker start`:
+
+```bash
+docker ps -a --filter "name=jenkins"
+docker start jenkins
+docker start jenkins-agent-linux-build
+```
+
+`jenkins` container ตั้ง restart policy เป็น `unless-stopped` ไว้แล้ว (กันเคส Jenkins สั่ง restart ตัวเองจากในหน้า UI แล้ว container ค้างดับ) เช็คได้ด้วย:
+
+```bash
+docker inspect jenkins --format '{{.HostConfig.RestartPolicy.Name}}'
+```
+
+⚠️ agent (`jenkins-agent-linux-build`) **ไม่มี** restart policy นี้ — ถ้า container ตัวนี้ดับ ต้อง `docker start` เอง ไม่ auto กลับมาเอง
+
+---
+
 ## 1. Backup `jenkins_home` (จากเครื่อง/container เดิม)
 
 ```bash
