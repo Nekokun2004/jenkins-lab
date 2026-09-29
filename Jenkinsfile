@@ -24,7 +24,10 @@ pipeline {
             agent { label 'linux-build' }
             steps {
                 script {
-                    docker.image('zricethezav/gitleaks:latest').inside('--entrypoint=""') {
+                    // -u 0:0 (numeric root, not the name 'root'): forced preemptively so a
+                    // future scanner-image swap can't silently reintroduce a uid-mismatch bug
+                    // like the ones already hit in SCA and Generate SBOM.
+                    docker.image('zricethezav/gitleaks:latest').inside('--entrypoint="" -u 0:0') {
                         sh '''
                             gitleaks detect --source . --no-git \
                                 --report-format json --report-path gitleaks-report.json -v || \
@@ -59,7 +62,7 @@ pipeline {
                     agent { label 'linux-build' }
                     steps {
                         script {
-                            docker.image('semgrep/semgrep:latest').inside {
+                            docker.image('semgrep/semgrep:latest').inside('-u 0:0') {
                                 sh 'semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true'
                             }
                         }
@@ -86,8 +89,13 @@ pipeline {
                 }
             }
             steps {
-                sh 'npm ci'
                 script {
+                    // npm audit resolves entirely from package.json/package-lock.json — it
+                    // does not need node_modules installed. Skipping npm ci here means this
+                    // stage never creates node_modules at all, so there's nothing for the
+                    // root-owned-file residue problem (that we hit and fixed once already)
+                    // to even apply to. Verified locally: audit.json comes out identical
+                    // with or without a prior npm ci.
                     sh 'apk add --no-cache jq'
                     sh 'npm audit --audit-level=high --json > audit.json || true'
                     def critical = sh(
@@ -99,13 +107,6 @@ pipeline {
                     }
                     echo "SCA passed with 0 critical vulnerabilities (warnings allowed)"
                 }
-                // Running this container as root means `npm ci` above wrote root-owned
-                // node_modules. Only audit.json is stashed forward, so clean node_modules
-                // up now rather than leave root-owned files behind — Jenkins reuses this
-                // physical workspace directory across future builds, and a later stage
-                // running as uid 1000 (the normal case) would otherwise hit the same
-                // permission wall we just fixed here.
-                sh 'rm -rf node_modules'
             }
             post {
                 always {
@@ -124,20 +125,27 @@ pipeline {
                 // used here. Run them as one-shot `docker run` invocations from the agent's
                 // own shell instead, passing CLI args directly as the container's CMD.
                 //
-                // anchore/syft:latest has NO /etc/passwd at all (confirmed via `docker cp`),
-                // so uid 1000 has no home directory entry and Go's home-dir resolution falls
-                // back to '/', which is root-owned. syft then fails trying to write both its
-                // cache dir (/.cache/syft) and — fatally — the output report itself, relative
-                // to that broken HOME. Root isn't needed here (unlike apk in SCA, which needs
-                // real root-owned system directories); pointing HOME at an always-writable
-                // directory fixes the actual cause without escalating privileges or producing
-                // root-owned output files.
-                sh 'docker run --rm -u $(id -u):$(id -g) -e HOME=/tmp -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
+                // Run as root (-u 0:0, numeric — anchore/syft:latest has no /etc/passwd at
+                // all, so '-u root' by NAME fails outright with "unable to find user root:
+                // no matching entries in passwd file"; numeric uids bypass that lookup and
+                // work regardless of whether the image has a user database). Root sidesteps
+                // syft's broken HOME resolution entirely. This leaves cosign.key/cosign.pub/
+                // taskflow-api.cdx.json root-owned, so the chown step below reclaims them —
+                // same pattern as SCA's fix, applied consistently here too.
+                sh 'docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
                 sh '''
-                    docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
-                    docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --tlog-upload=false --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
+                '''
+                // A plain `chown` here would run as the agent's own uid (1000, non-root),
+                // which cannot reclaim files it doesn't own — confirmed: 'Operation not
+                // permitted'. Root only exists *inside* a container relative to the bind
+                // mount, so the chown itself has to run the same way the scanners did.
+                sh '''
+                    TARGET_UID=$(id -u); TARGET_GID=$(id -g)
+                    docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src node:20-alpine chown -R "${TARGET_UID}:${TARGET_GID}" .
                 '''
             }
             post {
@@ -167,7 +175,7 @@ pipeline {
                     // opa's published image is also shell-less (same reason as syft/cosign
                     // above) — invoke it as a one-shot `docker run` instead of .inside().
                     def result = sh(
-                        script: 'docker run --rm -v "$WORKSPACE:/src" -w /src openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego \'data.security.deny\' -f raw',
+                        script: 'docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego \'data.security.deny\' -f raw',
                         returnStdout: true
                     ).trim()
                     echo "OPA policy evaluation result: ${result}"
