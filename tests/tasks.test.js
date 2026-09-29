@@ -13,32 +13,33 @@ describe('Tasks API', () => {
     expect(res.body).toEqual([]);
   });
 
-  it('creates a task', async () => {
-    const res = await request(app).post('/api/tasks').send({ title: 'Write Jenkinsfile' });
-    expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ title: 'Write Jenkinsfile', done: false });
-  });
+  // TEMP (Lab05 step 4b): tests below disabled to force coverage < 70%. Original: tests/tasks.test.js in git history.
+  //   it('creates a task', async () => {
+  //     const res = await request(app).post('/api/tasks').send({ title: 'Write Jenkinsfile' });
+  //     expect(res.status).toBe(201);
+  //     expect(res.body).toMatchObject({ title: 'Write Jenkinsfile', done: false });
+  //   });
 
-  it('rejects a task with no title', async () => {
-    const res = await request(app).post('/api/tasks').send({});
-    expect(res.status).toBe(400);
-  });
+  //   it('rejects a task with no title', async () => {
+  //     const res = await request(app).post('/api/tasks').send({});
+  //     expect(res.status).toBe(400);
+  //   });
 
-  it('marks a task done', async () => {
-    const created = await request(app).post('/api/tasks').send({ title: 'Ship pipeline' });
-    const res = await request(app).patch(`/api/tasks/${created.body.id}/done`);
-    expect(res.status).toBe(200);
-    expect(res.body.done).toBe(true);
-  });
+  //   it('marks a task done', async () => {
+  //     const created = await request(app).post('/api/tasks').send({ title: 'Ship pipeline' });
+  //     const res = await request(app).patch(`/api/tasks/${created.body.id}/done`);
+  //     expect(res.status).toBe(200);
+  //     expect(res.body.done).toBe(true);
+  //   });
 
-  it('404s marking a nonexistent task done', async () => {
-    const res = await request(app).patch('/api/tasks/9999/done');
-    expect(res.status).toBe(404);
-  });
+  //   it('404s marking a nonexistent task done', async () => {
+  //     const res = await request(app).patch('/api/tasks/9999/done');
+  //     expect(res.status).toBe(404);
+  //   });
 
-  it('deletes a task', async () => {
-    const created = await request(app).post('/api/tasks').send({ title: 'Temp task' });
-    const res = await request(app).delete(`/api/tasks/${created.body.id}`);
-    expect(res.status).toBe(204);
-  });
+  //   it('deletes a task', async () => {
+  //     const created = await request(app).post('/api/tasks').send({ title: 'Temp task' });
+  //     const res = await request(app).delete(`/api/tasks/${created.body.id}`);
+  //     expect(res.status).toBe(204);
+  //   });
 });
