@@ -84,14 +84,20 @@ pipeline {
         }
         stage('Deploy — Staging') {
             agent { label 'linux-build' }
-            when { branch 'develop' }
+            when {
+                beforeInput true
+                branch 'develop'
+            }
             steps {
                 sh 'echo deploying to staging...'
             }
         }
         stage('Deploy — Production') {
             agent { label 'linux-build' }
-            when { branch 'main' }
+            when {
+                beforeInput true
+                branch 'main'
+            }
             input {
                 message 'Deploy to production?'
             }
