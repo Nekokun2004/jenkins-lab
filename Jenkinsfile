@@ -123,7 +123,16 @@ pipeline {
                 // — which needs a shell inside the container to run `sh` steps — can't be
                 // used here. Run them as one-shot `docker run` invocations from the agent's
                 // own shell instead, passing CLI args directly as the container's CMD.
-                sh 'docker run --rm -u $(id -u):$(id -g) -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
+                //
+                // anchore/syft:latest has NO /etc/passwd at all (confirmed via `docker cp`),
+                // so uid 1000 has no home directory entry and Go's home-dir resolution falls
+                // back to '/', which is root-owned. syft then fails trying to write both its
+                // cache dir (/.cache/syft) and — fatally — the output report itself, relative
+                // to that broken HOME. Root isn't needed here (unlike apk in SCA, which needs
+                // real root-owned system directories); pointing HOME at an always-writable
+                // directory fixes the actual cause without escalating privileges or producing
+                // root-owned output files.
+                sh 'docker run --rm -u $(id -u):$(id -g) -e HOME=/tmp -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
                 sh '''
                     docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
