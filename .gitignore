@@ -34,3 +34,6 @@ npm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+
+# Lab build artifacts
+*.zip
