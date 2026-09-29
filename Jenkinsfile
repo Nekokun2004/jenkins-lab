@@ -29,6 +29,7 @@ pipeline {
                 stage('Unit Test') {
                     steps {
                         sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
+                        stash name: 'coverage-report', includes: 'coverage/**, reports/**'
                     }
                 }
             }
@@ -36,6 +37,7 @@ pipeline {
         stage('SonarQube Analysis') {
             agent { label 'linux-build' }
             steps {
+                unstash 'coverage-report'
                 script {
                     def scannerHome = tool 'sonar-scanner-tool'
                     withSonarQubeEnv('SonarQube') {
