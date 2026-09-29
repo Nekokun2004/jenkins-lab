@@ -26,7 +26,45 @@ pipeline {
         }
         stage('Unit Test') {
             steps {
-                sh 'npm test'
+                sh 'npm test -- --coverage --reporters=jest-junit'
+            }
+        }
+        stage('SonarQube Analysis') {
+            agent { label 'linux-build' }
+            steps {
+                script {
+                    def scannerHome = tool 'sonar-scanner-tool'
+                    withSonarQubeEnv('SonarQube') {
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=taskflow-api -Dsonar.sources=src -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+                    }
+                }
+            }
+        }
+        stage('Quality Gate') {
+            agent { label 'linux-build' }
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+        stage('E2E') {
+            agent { label 'linux-build' }
+            steps {
+                sh 'docker compose up -d --build'
+                script {
+                    docker.image('mcr.microsoft.com/playwright:v1.49.0-noble').inside('--network host') {
+                        sh 'npm ci'
+                        sh 'npm run test:e2e'
+                    }
+                }
+            }
+            post {
+                always {
+                    sh 'docker compose down -v'
+                    junit 'playwright-report/junit.xml'
+                    archiveArtifacts artifacts: 'playwright-report/html/**', allowEmptyArchive: true
+                }
             }
         }
         stage('Deploy — Staging') {
@@ -55,6 +93,8 @@ pipeline {
         }
         always {
             archiveArtifacts artifacts: 'npm-debug.log*', allowEmptyArchive: true
+            junit 'reports/junit.xml'
+            publishCoverage adapters: [coberturaAdapter('coverage/cobertura-coverage.xml')]
         }
     }
 }
