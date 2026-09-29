@@ -21,15 +21,18 @@ pipeline {
             }
         }
         stage('Checks') {
-            agent { docker { image 'node:20-alpine' } }
             parallel {
                 stage('Lint') {
+                    agent { docker { image 'node:20-alpine' } }
                     steps {
+                        sh 'npm ci'
                         sh 'npm run lint'
                     }
                 }
                 stage('Unit Test') {
+                    agent { docker { image 'node:20-alpine' } }
                     steps {
+                        sh 'npm ci'
                         sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
                         stash name: 'coverage-report', includes: 'coverage/**, reports/**'
                     }
