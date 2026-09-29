@@ -33,6 +33,8 @@ pipeline {
                                 --report-format json --report-path gitleaks-report.json -v || \
                             gitleaks detect --source . --no-git \
                                 --report-format json --report-path gitleaks-report.json --exit-code 0
+                            # ran as root: hand the report back to the workspace owner
+                            chown "$(stat -c '%u:%g' .)" gitleaks-report.json
                         '''
                     }
                 }
@@ -63,7 +65,11 @@ pipeline {
                     steps {
                         script {
                             docker.image('semgrep/semgrep:latest').inside('-u 0:0') {
-                                sh 'semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true'
+                                sh '''
+                                    semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true
+                                    # ran as root: hand the report back to the workspace owner
+                                    chown "$(stat -c '%u:%g' .)" semgrep-report.sarif
+                                '''
                             }
                         }
                     }
@@ -98,6 +104,9 @@ pipeline {
                     // with or without a prior npm ci.
                     sh 'apk add --no-cache jq'
                     sh 'npm audit --audit-level=high --json > audit.json || true'
+                    // container runs as root (needed for apk): hand audit.json back to the
+                    // workspace owner so the later unstash/overwrite as uid 1000 can't collide
+                    sh 'chown "$(stat -c \'%u:%g\' .)" audit.json'
                     def critical = sh(
                         script: "jq '.metadata.vulnerabilities.critical' audit.json",
                         returnStdout: true
@@ -149,6 +158,10 @@ pipeline {
                 // agent's logical label) and the underlying Docker container's actual name
                 // ('jenkins-agent-linux-build') are two separate identifiers with no
                 // automatic mapping between them.
+                // The agent workspace persists across builds, and `cosign generate-key-pair`
+                // refuses to overwrite an existing cosign.key (interactive "Overwrite?" prompt
+                // -> "user declined the prompt" in CI). Start from a clean slate every run.
+                sh 'rm -f cosign.key cosign.pub taskflow-api.cdx.json taskflow-api.cdx.json.sig'
                 sh 'docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
                 sh '''
                     docker run --rm -u 0:0 -e COSIGN_PASSWORD= --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" \
@@ -169,6 +182,10 @@ pipeline {
                 always {
                     archiveArtifacts artifacts: 'taskflow-api.cdx.json,taskflow-api.cdx.json.sig,cosign.pub', allowEmptyArchive: true
                     stash name: 'sbom-report', includes: 'taskflow-api.cdx.json'
+                    // The signing key is a throwaway generated per build and never archived. Leaving
+                    // it in the persistent workspace makes the NEXT build's Secrets Detection flag
+                    // it as a leaked private key (found by a second local pass), so remove it.
+                    sh 'rm -f cosign.key'
                 }
             }
         }
@@ -224,11 +241,6 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             agent { label 'linux-build' }
-            // TEMP TEST: checking whether the JAVA_HOME workaround is still needed
-            // environment {
-            //     JAVA_HOME = '/opt/java/openjdk'
-            //     PATH = "${JAVA_HOME}/bin:${env.PATH}"
-            // }
             steps {
                 unstash 'coverage-report'
                 script {
