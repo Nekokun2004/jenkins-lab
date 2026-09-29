@@ -41,10 +41,11 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             agent { label 'linux-build' }
-            environment {
-                JAVA_HOME = '/opt/java/openjdk'
-                PATH = "${JAVA_HOME}/bin:${env.PATH}"
-            }
+            // TEMP TEST: checking whether the JAVA_HOME workaround is still needed
+            // environment {
+            //     JAVA_HOME = '/opt/java/openjdk'
+            //     PATH = "${JAVA_HOME}/bin:${env.PATH}"
+            // }
             steps {
                 unstash 'coverage-report'
                 script {
@@ -68,7 +69,7 @@ pipeline {
             steps {
                 sh 'docker compose up -d --build'
                 script {
-                    docker.image('mcr.microsoft.com/playwright:v1.49.0-noble').inside('--network host') {
+                    docker.image('mcr.microsoft.com/playwright:v1.63.0-noble').inside('--network host') {
                         sh 'npm ci'
                         sh 'npm run test:e2e'
                     }
@@ -120,6 +121,7 @@ pipeline {
         }
         always {
             node('linux-build') {
+                unstash 'coverage-report'
                 archiveArtifacts artifacts: 'npm-debug.log*', allowEmptyArchive: true
                 junit 'reports/junit.xml'
                 publishCoverage adapters: [coberturaAdapter('coverage/cobertura-coverage.xml')]
