@@ -20,6 +20,122 @@ pipeline {
                 sh 'npm ci'
             }
         }
+        stage('Secrets Detection') {
+            steps {
+                script {
+                    docker.image('zricethezav/gitleaks:latest').inside('--entrypoint=""') {
+                        sh '''
+                            gitleaks detect --source . --no-git \
+                                --report-format json --report-path gitleaks-report.json -v || \
+                            gitleaks detect --source . --no-git \
+                                --report-format json --report-path gitleaks-report.json --exit-code 0
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('SAST') {
+            parallel {
+                stage('ESLint Security') {
+                    agent { docker { image 'node:20-alpine' } }
+                    steps {
+                        sh 'npm ci'
+                        sh 'npx eslint --plugin security -f @microsoft/eslint-formatter-sarif -o eslint-report.sarif src/ || true'
+                    }
+                    post {
+                        always {
+                            archiveArtifacts artifacts: 'eslint-report.sarif', allowEmptyArchive: true
+                        }
+                    }
+                }
+                stage('Semgrep') {
+                    steps {
+                        script {
+                            docker.image('semgrep/semgrep:latest').inside {
+                                sh 'semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true'
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts artifacts: 'semgrep-report.sarif', allowEmptyArchive: true
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SCA — npm audit') {
+            agent { docker { image 'node:20-alpine' } }
+            steps {
+                sh 'npm ci'
+                script {
+                    sh 'apk add --no-cache jq'
+                    sh 'npm audit --audit-level=high --json > audit.json || true'
+                    def critical = sh(
+                        script: "jq '.metadata.vulnerabilities.critical' audit.json",
+                        returnStdout: true
+                    ).trim().toInteger()
+                    if (critical > 0) {
+                        error("Blocking: ${critical} critical vulnerabilities found")
+                    }
+                    echo "SCA passed with 0 critical vulnerabilities (warnings allowed)"
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'audit.json', allowEmptyArchive: true
+                    stash name: 'audit-report', includes: 'audit.json'
+                }
+            }
+        }
+
+        stage('Generate SBOM') {
+            steps {
+                script {
+                    docker.image('anchore/syft:latest').inside('--entrypoint=""') {
+                        sh 'syft dir:. -o cyclonedx-json=taskflow-api.cdx.json'
+                    }
+                    docker.image('ghcr.io/sigstore/cosign/cosign:v2.4.1').inside('--entrypoint="" -e COSIGN_PASSWORD=') {
+                        sh '''
+                            cosign generate-key-pair
+                            cosign sign-blob --key cosign.key --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'taskflow-api.cdx.json,taskflow-api.cdx.json.sig,cosign.pub', allowEmptyArchive: true
+                    stash name: 'sbom-report', includes: 'taskflow-api.cdx.json'
+                }
+            }
+        }
+
+        stage('Policy Gate') {
+            steps {
+                unstash 'audit-report'
+                script {
+                    docker.image('openpolicyagent/opa:latest').inside('--entrypoint=""') {
+                        def result = sh(
+                            script: "opa eval --input audit.json --data policy/security.rego 'data.security.deny' -f raw",
+                            returnStdout: true
+                        ).trim()
+                        echo "OPA policy evaluation result: ${result}"
+                        if (result != '[]' && result != '') {
+                            error("Policy Gate blocked: ${result}")
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Checks') {
             parallel {
                 stage('Lint') {
