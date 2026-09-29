@@ -111,7 +111,7 @@ pipeline {
                     docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
                     docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
-                        ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
+                        ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --tlog-upload=false --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
                 '''
             }
             post {
