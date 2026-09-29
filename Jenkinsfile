@@ -1,5 +1,5 @@
 pipeline {
-    agent { docker { image 'node:20-alpine' } }
+    agent none
 
     environment {
         APP_NAME = 'taskflow-api'
@@ -15,11 +15,13 @@ pipeline {
 
     stages {
         stage('Install') {
+            agent { docker { image 'node:20-alpine' } }
             steps {
                 sh 'npm ci'
             }
         }
         stage('Checks') {
+            agent { docker { image 'node:20-alpine' } }
             parallel {
                 stage('Lint') {
                     steps {
@@ -78,12 +80,14 @@ pipeline {
             }
         }
         stage('Deploy — Staging') {
+            agent { label 'linux-build' }
             when { branch 'develop' }
             steps {
                 sh 'echo deploying to staging...'
             }
         }
         stage('Deploy — Production') {
+            agent { label 'linux-build' }
             when { branch 'main' }
             input {
                 message 'Deploy to production?'
@@ -96,15 +100,21 @@ pipeline {
 
     post {
         success {
-            echo "✅ ${env.APP_NAME} passed on ${env.NODE_ENV}"
+            node('linux-build') {
+                echo "✅ ${env.APP_NAME} passed on ${env.NODE_ENV}"
+            }
         }
         failure {
-            echo "❌ Failed at stage: ${env.STAGE_NAME}"
+            node('linux-build') {
+                echo "❌ Failed at stage: ${env.STAGE_NAME}"
+            }
         }
         always {
-            archiveArtifacts artifacts: 'npm-debug.log*', allowEmptyArchive: true
-            junit 'reports/junit.xml'
-            publishCoverage adapters: [coberturaAdapter('coverage/cobertura-coverage.xml')]
+            node('linux-build') {
+                archiveArtifacts artifacts: 'npm-debug.log*', allowEmptyArchive: true
+                junit 'reports/junit.xml'
+                publishCoverage adapters: [coberturaAdapter('coverage/cobertura-coverage.xml')]
+            }
         }
     }
 }
