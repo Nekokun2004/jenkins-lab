@@ -16,6 +16,10 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/e2e/"
+    ],
     "collectCoverageFrom": [
       "src/**/*.js"
     ],
