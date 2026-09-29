@@ -36,8 +36,11 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             agent { label 'linux-build' }
+            environment {
+                JAVA_HOME = '/opt/java/openjdk'
+                PATH = "${JAVA_HOME}/bin:${env.PATH}"
+            }
             steps {
-                sh 'echo JAVA_HOME=$JAVA_HOME; which java; env | sort'
                 unstash 'coverage-report'
                 script {
                     def scannerHome = tool 'sonar-scanner-tool'
