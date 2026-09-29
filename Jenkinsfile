@@ -74,7 +74,17 @@ pipeline {
         }
 
         stage('SCA — npm audit') {
-            agent { docker { image 'node:20-alpine' } }
+            agent {
+                docker {
+                    image 'node:20-alpine'
+                    // apk add needs root to write /var/cache/apk and /lib/apk/db; Jenkins'
+                    // Docker Pipeline plugin otherwise runs the container as uid 1000 (matching
+                    // the agent's jenkins user), which fails with "Unable to open log:
+                    // Permission denied" before jq is even installed — confirmed by reproducing
+                    // the exact error with `docker run -u 1000:1000`.
+                    args '-u root'
+                }
+            }
             steps {
                 sh 'npm ci'
                 script {
@@ -89,6 +99,13 @@ pipeline {
                     }
                     echo "SCA passed with 0 critical vulnerabilities (warnings allowed)"
                 }
+                // Running this container as root means `npm ci` above wrote root-owned
+                // node_modules. Only audit.json is stashed forward, so clean node_modules
+                // up now rather than leave root-owned files behind — Jenkins reuses this
+                // physical workspace directory across future builds, and a later stage
+                // running as uid 1000 (the normal case) would otherwise hit the same
+                // permission wall we just fixed here.
+                sh 'rm -rf node_modules'
             }
             post {
                 always {
@@ -125,8 +142,19 @@ pipeline {
         stage('Policy Gate') {
             agent { label 'linux-build' }
             steps {
-                unstash 'audit-report'
                 script {
+                    // If 'SCA — npm audit' never reached its post.always (e.g. it was itself
+                    // skipped or crashed before stashing), unstash throws a raw AbortException
+                    // that masks the real upstream failure behind a confusing "no such saved
+                    // stash" error. Catch just that and let the real problem surface naturally
+                    // below instead: the opa eval step will fail on its own, loudly, because
+                    // audit.json genuinely won't exist — this doesn't hide a real failure, it
+                    // just replaces a misleading one with an accurate one.
+                    try {
+                        unstash 'audit-report'
+                    } catch (Exception e) {
+                        echo "No 'audit-report' stash found, skipping: ${e.message}"
+                    }
                     // opa's published image is also shell-less (same reason as syft/cosign
                     // above) — invoke it as a one-shot `docker run` instead of .inside().
                     def result = sh(
@@ -242,7 +270,18 @@ pipeline {
         }
         always {
             node('linux-build') {
-                unstash 'coverage-report'
+                script {
+                    // Same reasoning as Policy Gate: if 'Unit Test' never ran (e.g. an earlier
+                    // stage failed first), unstash throws a raw AbortException that masks the
+                    // real upstream failure. Catch just that; junit/publishCoverage below will
+                    // still fail loudly on their own if reports/coverage genuinely don't exist,
+                    // so a real problem still surfaces — just without the confusing extra error.
+                    try {
+                        unstash 'coverage-report'
+                    } catch (Exception e) {
+                        echo "No 'coverage-report' stash found, skipping: ${e.message}"
+                    }
+                }
                 archiveArtifacts artifacts: 'npm-debug.log*', allowEmptyArchive: true
                 junit 'reports/junit.xml'
                 publishCoverage adapters: [coberturaAdapter('coverage/cobertura-coverage.xml')]
