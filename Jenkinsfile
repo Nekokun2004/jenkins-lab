@@ -19,14 +19,18 @@ pipeline {
                 sh 'npm ci'
             }
         }
-        stage('Lint') {
-            steps {
-                sh 'npm run lint'
-            }
-        }
-        stage('Unit Test') {
-            steps {
-                sh 'npm test -- --coverage --reporters=jest-junit'
+        stage('Checks') {
+            parallel {
+                stage('Lint') {
+                    steps {
+                        sh 'npm run lint'
+                    }
+                }
+                stage('Unit Test') {
+                    steps {
+                        sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
+                    }
+                }
             }
         }
         stage('SonarQube Analysis') {
