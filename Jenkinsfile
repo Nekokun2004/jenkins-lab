@@ -192,7 +192,7 @@ pipeline {
                     // opa's published image is also shell-less (same reason as syft/cosign
                     // above) — invoke it as a one-shot `docker run` instead of .inside().
                     def result = sh(
-                        script: 'docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego \'data.security.deny\' -f raw',
+                        script: 'docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego \'data.security.deny\' -f raw',
                         returnStdout: true
                     ).trim()
                     echo "OPA policy evaluation result: ${result}"
