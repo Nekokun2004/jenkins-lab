@@ -35,6 +35,25 @@ docker-compose does), it talks to real Postgres using `db/schema.sql`.
 | PATCH  | `/api/tasks/:id/done` | –                | mark task done                |
 | DELETE | `/api/tasks/:id`      | –                | delete task                   |
 
+## Unit test coverage scope
+
+`collectCoverageFrom` in `package.json` excludes two files from the unit coverage
+denominator:
+
+- `src/index.js` — pure process bootstrap (starts the HTTP server on a port);
+  no branching logic worth unit-testing.
+- `src/repositories/pgTaskRepository.js` — the real PostgreSQL-backed
+  repository implementation. It's only meaningfully exercised against a real
+  database, which the Playwright E2E suite does via `docker compose` (see
+  Lab 05); mocking the `pg` driver to unit-test it would test the mock, not
+  the SQL. `memoryTaskRepository.js` (used by `npm test`) already covers the
+  same interface contract with real assertions.
+
+This keeps the SonarQube `taskflow-gate-70` coverage gate meaningful — it
+measures how well the code that *can* be unit-tested actually is, rather than
+being dragged down by files that are legitimately covered by a different test
+layer.
+
 ## Push this to your own GitHub repo
 
 ```bash

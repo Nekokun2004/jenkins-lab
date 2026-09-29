@@ -21,7 +21,9 @@
       "/e2e/"
     ],
     "collectCoverageFrom": [
-      "src/**/*.js"
+      "src/**/*.js",
+      "!src/index.js",
+      "!src/repositories/pgTaskRepository.js"
     ],
     "coverageReporters": [
       "text",
