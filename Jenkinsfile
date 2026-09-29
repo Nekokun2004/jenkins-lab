@@ -21,6 +21,7 @@ pipeline {
             }
         }
         stage('Secrets Detection') {
+            agent { label 'linux-build' }
             steps {
                 script {
                     docker.image('zricethezav/gitleaks:latest').inside('--entrypoint=""') {
@@ -55,6 +56,7 @@ pipeline {
                     }
                 }
                 stage('Semgrep') {
+                    agent { label 'linux-build' }
                     steps {
                         script {
                             docker.image('semgrep/semgrep:latest').inside {
@@ -97,18 +99,20 @@ pipeline {
         }
 
         stage('Generate SBOM') {
+            agent { label 'linux-build' }
             steps {
-                script {
-                    docker.image('anchore/syft:latest').inside('--entrypoint=""') {
-                        sh 'syft dir:. -o cyclonedx-json=taskflow-api.cdx.json'
-                    }
-                    docker.image('ghcr.io/sigstore/cosign/cosign:v2.4.1').inside('--entrypoint="" -e COSIGN_PASSWORD=') {
-                        sh '''
-                            cosign generate-key-pair
-                            cosign sign-blob --key cosign.key --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
-                        '''
-                    }
-                }
+                // syft and cosign publish distroless/scratch images with no shell at all
+                // (verified: `docker inspect` shows no /bin/sh), so docker.image().inside()
+                // — which needs a shell inside the container to run `sh` steps — can't be
+                // used here. Run them as one-shot `docker run` invocations from the agent's
+                // own shell instead, passing CLI args directly as the container's CMD.
+                sh 'docker run --rm -u $(id -u):$(id -g) -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
+                sh '''
+                    docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                        ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
+                    docker run --rm -u $(id -u):$(id -g) -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                        ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
+                '''
             }
             post {
                 always {
@@ -119,18 +123,19 @@ pipeline {
         }
 
         stage('Policy Gate') {
+            agent { label 'linux-build' }
             steps {
                 unstash 'audit-report'
                 script {
-                    docker.image('openpolicyagent/opa:latest').inside('--entrypoint=""') {
-                        def result = sh(
-                            script: "opa eval --input audit.json --data policy/security.rego 'data.security.deny' -f raw",
-                            returnStdout: true
-                        ).trim()
-                        echo "OPA policy evaluation result: ${result}"
-                        if (result != '[]' && result != '') {
-                            error("Policy Gate blocked: ${result}")
-                        }
+                    // opa's published image is also shell-less (same reason as syft/cosign
+                    // above) — invoke it as a one-shot `docker run` instead of .inside().
+                    def result = sh(
+                        script: 'docker run --rm -v "$WORKSPACE:/src" -w /src openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego \'data.security.deny\' -f raw',
+                        returnStdout: true
+                    ).trim()
+                    echo "OPA policy evaluation result: ${result}"
+                    if (result != '[]' && result != '') {
+                        error("Policy Gate blocked: ${result}")
                     }
                 }
             }

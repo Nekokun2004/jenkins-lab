@@ -11,6 +11,17 @@ junit.xml
 .env.*
 !.env.example
 
+# Lab 06 security pipeline outputs — Jenkins-generated per build, cosign.key is a
+# real (throwaway) private key and must never be committed
+gitleaks-report.json
+eslint-report.sarif
+semgrep-report.sarif
+audit.json
+taskflow-api.cdx.json
+taskflow-api.cdx.json.sig
+cosign.key
+cosign.pub
+
 # Jenkins backups and downloaded tools (large, may contain live secrets)
 jenkins_home.tgz
 agent.jar
