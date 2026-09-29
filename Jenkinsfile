@@ -132,11 +132,28 @@ pipeline {
                 // syft's broken HOME resolution entirely. This leaves cosign.key/cosign.pub/
                 // taskflow-api.cdx.json root-owned, so the chown step below reclaims them —
                 // same pattern as SCA's fix, applied consistently here too.
-                sh 'docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
+                //
+                // '-v "$WORKSPACE:/src"' was a raw HOST bind mount, but this agent container
+                // talks to the real host's dockerd over the shared docker.sock (Docker-
+                // outside-of-Docker) — $WORKSPACE is a path inside the agent's own named-
+                // volume filesystem, NOT a real path on the actual host. Docker silently
+                // auto-created an empty directory at that literal path on the real host and
+                // wrote output there instead, completely disconnected from the real
+                // workspace — confirmed by reproducing it and checking both locations
+                // independently. '--volumes-from jenkins-agent-linux-build' shares the
+                // agent's own filesystem view instead (the same mechanism Jenkins' own
+                // docker.image().inside() already uses correctly for Gitleaks/Semgrep, just
+                // spelled out explicitly here since a raw docker run doesn't get it for
+                // free). Hardcoding this container's name is a known coupling specific to
+                // this single-agent lab setup — Jenkins' NODE_NAME ('linux-build', the
+                // agent's logical label) and the underlying Docker container's actual name
+                // ('jenkins-agent-linux-build') are two separate identifiers with no
+                // automatic mapping between them.
+                sh 'docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json'
                 sh '''
-                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
-                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= -v "$WORKSPACE:/src" -w /src \
+                    docker run --rm -u 0:0 -e COSIGN_PASSWORD= --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" \
                         ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --tlog-upload=false --yes taskflow-api.cdx.json > taskflow-api.cdx.json.sig
                 '''
                 // A plain `chown` here would run as the agent's own uid (1000, non-root),
@@ -145,7 +162,7 @@ pipeline {
                 // mount, so the chown itself has to run the same way the scanners did.
                 sh '''
                     TARGET_UID=$(id -u); TARGET_GID=$(id -g)
-                    docker run --rm -u 0:0 -v "$WORKSPACE:/src" -w /src node:20-alpine chown -R "${TARGET_UID}:${TARGET_GID}" .
+                    docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" node:20-alpine chown -R "${TARGET_UID}:${TARGET_GID}" .
                 '''
             }
             post {
