@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: taskflow
+spec:
+  selector:
+    app: taskflow
+    color: blue
+  ports:
+  - port: 8080
+    targetPort: 8080
