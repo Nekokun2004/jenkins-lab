@@ -1,0 +1,35 @@
+---
+- name: Configure taskflow-api host
+  hosts: taskflow
+  gather_facts: false
+  vars:
+    image_name: "localhost:5000/taskflow-api:{{ image_tag }}"
+
+  tasks:
+    - name: Confirm Node.js is present on the host
+      ansible.builtin.command: node --version
+      register: node_version
+      changed_when: false
+
+    - name: Confirm Docker CLI is present on the host
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Pull taskflow-api image from the local registry
+      ansible.builtin.command: "docker pull {{ image_name }}"
+      register: pull_result
+      changed_when: "'Image is up to date' not in pull_result.stdout"
+
+    - name: Show pulled image digest
+      ansible.builtin.command: "docker image inspect {{ image_name }} --format '{{ '{{' }}.RepoDigests{{ '}}' }}'"
+      register: image_digest
+      changed_when: false
+
+    - name: Report results
+      ansible.builtin.debug:
+        msg:
+          - "Terraform-reported address: {{ terraform_reported_address }}"
+          - "Node.js: {{ node_version.stdout }}"
+          - "Docker: {{ docker_version.stdout }}"
+          - "Image digest: {{ image_digest.stdout }}"

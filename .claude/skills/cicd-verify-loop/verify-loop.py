@@ -6,7 +6,8 @@ container context Jenkins would give it; every result is verified by a SEPARATE 
 Runs the whole sequence N times (default 2) in ONE persistent workspace, so pass 2 catches
 stale-state bugs exactly like a second real build would.
 
-Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep] [--lab07]
+Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep] [--lab07|--lab08]
+--lab08 runs only the IaC stages against LocalStack, using a throwaway state key (never the real one).
 Not reproducible locally (verify prerequisites only): withSonarQubeEnv/waitForQualityGate,
 junit/publishCoverage/archiveArtifacts, `when { branch }`, `input`.
 When you add or change a stage, extend the matching @stage function below.
@@ -25,13 +26,14 @@ def sh(cmd, inp=None, timeout=900):
     return p.returncode, (p.stdout + p.stderr)
 
 
-def agent_exec(script, env=None):
+def agent_exec(script, env=None, cwd=None):
     """Run a shell script in the agent's own shell (what a plain `sh` step does).
-    `env` = extra environment a Jenkins `env.X = ...` / `environment {}` block would export."""
+    `env` = extra environment a Jenkins `env.X = ...` / `environment {}` block would export.
+    `cwd` = subdirectory of the workspace, like a `dir('...')` block."""
     cmd = ["docker", "exec", "-i", "-e", f"WORKSPACE={WS}"]
     for k, v in (env or {}).items():
         cmd += ["-e", f"{k}={v}"]
-    cmd += ["-w", WS, AGENT, "sh", "-s"]
+    cmd += ["-w", f"{WS}/{cwd}" if cwd else WS, AGENT, "sh", "-s"]
     return sh(cmd, inp=script)
 
 
@@ -74,7 +76,8 @@ SNIP = re.compile(
     r"\bsh\s*'''(?P<blk>.*?)'''"
     r"|\bsh\s*'(?P<one>(?:[^'\\]|\\.)*)'"
     r"|script:\s*'(?P<scr>(?:[^'\\]|\\.)*)'"
-    r"|script:\s*\"(?P<dq>(?:[^\"\\]|\\.)*)\"", re.S)
+    r"|script:\s*\"(?P<dq>(?:[^\"\\]|\\.)*)\""
+    r"|\bsh\s*\"(?P<gs>(?:[^\"\\]|\\.)*)\"", re.S)
 
 
 def snippets(name):
@@ -85,8 +88,10 @@ def snippets(name):
             import textwrap
             out.append(textwrap.dedent(m.group("blk")).strip("\n"))
         else:
-            s = next(m.group(g) for g in ("one", "scr", "dq") if m.group(g) is not None)
-            out.append(s.replace("\\'", "'"))
+            s = next(m.group(g) for g in ("one", "scr", "dq", "gs") if m.group(g) is not None)
+            s = s.replace("\\'", "'")
+            # Groovy GString ${env.X} -> shell $X (the harness exports the same variable)
+            out.append(re.sub(r"\$\{env\.(\w+)\}", r"$\1", s))
     return out
 
 
@@ -434,13 +439,184 @@ def st_bluegreen():
     return "; ".join(notes) + "; no-context rollback is a no-op"
 
 
+# ---------------------------------------------------------------- Lab 08 (IaC)
+TF_DIR = "infra/terraform"
+HARNESS_KEY = "taskflow-api/verify-loop.tfstate"     # NEVER the real state key
+AWS_ENV = "AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1"
+
+
+def lab08_env():
+    e = lab07_env()
+    e.update({"TF_IN_AUTOMATION": "1", "TF_INPUT": "0",  # the Jenkinsfile environment {} block
+              # snippets stay verbatim; only the state key is redirected (init appends this)
+              "TF_CLI_ARGS_init": f"-backend-config=key={HARNESS_KEY}",
+              "SHORT_SHA": lab08_tag()})
+    return e
+
+
+def lab08_tag():
+    rc, o = sh(["curl", "-fsS", "http://localhost:5000/v2/taskflow-api/tags/list"])
+    must(rc == 0, "registry unreachable: " + o)
+    tags = json.loads(o)["tags"]
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()[:7]
+    return head if head in tags else sorted(tags)[-1]
+
+
+def l8(script, env=None, cwd=None):
+    """Like agent_exec, but with Jenkins' `sh -e` semantics (first failing command aborts the step)."""
+    return agent_exec("set -e\n" + script, env, cwd)
+
+
+def aws_cli(args):
+    return sh(["docker", "exec", "-e", "AWS_ACCESS_KEY_ID=test", "-e", "AWS_SECRET_ACCESS_KEY=test",
+               "-e", "AWS_DEFAULT_REGION=us-east-1", AGENT, "aws", "--endpoint-url=http://localhost:4566"] + args)
+
+
+def ingress_is_open():
+    src = "\n".join(l.split("#")[0] for l in open(os.path.join(ROOT, TF_DIR, "main.tf")).read().split("\n"))  # ignore comments
+    m = re.search(r'ingress\s*\{(.*?)\n  \}', src, re.S)
+    return bool(m and "0.0.0.0/0" in m.group(1))
+
+
+@stage("IaC / Terraform Validate")
+def st_tf_validate():
+    ss = snippets("Terraform Validate")
+    must(len(ss) == 1, f"expected 1 snippet, got {len(ss)}")
+    rc, o = l8(ss[0], lab08_env(), cwd=TF_DIR)
+    must(rc == 0, o[-600:])
+    return "init -backend=false + validate + fmt -check ok"
+
+
+@stage("IaC / Ansible Lint")
+def st_ansible_lint():
+    ss = snippets("Ansible Lint")
+    must(len(ss) == 1, f"expected 1 snippet, got {len(ss)}")
+    rc, o = l8(ss[0], lab08_env())
+    must(rc == 0, o[-600:])
+    must("0 failure(s)" in o, "lint summary missing: " + o[-300:])
+    return "ansible-lint clean"
+
+
+@stage("IaC / Security Scan")
+def st_iac_scan():
+    ss = snippets("IaC Security Scan")
+    must(len(ss) == 1, f"expected 1 snippet, got {len(ss)}")
+    rc, o = l8(ss[0], lab08_env(), cwd=TF_DIR)
+    must("===== tfsec =====" in o and "===== Checkov =====" in o, "one of the scanners did not run: " + o[-400:])
+    if ingress_is_open():
+        must(rc != 0, "stage stayed GREEN although ingress is 0.0.0.0/0")
+        must("aws-ec2-no-public-ingress-sgr" in o, "tfsec did not report the open ingress")
+        must("CKV_AWS_382" in o or "CKV_AWS_260" in o or "FAILED" in o, "checkov reported nothing")
+        return "ingress open => stage RED as intended (tfsec aws-ec2-no-public-ingress-sgr; checkov failed too)"
+    must(rc == 0, "clean config must pass both scanners: " + o[-900:])
+    return "config clean => both scanners pass, stage GREEN"
+
+
+@stage("IaC / Terraform Plan")
+def st_tf_plan():
+    ss = snippets("Terraform Plan")
+    must(len(ss) == 2, f"expected 2 snippets (rm, plan), got {len(ss)}")
+    env = lab08_env()
+    rc, o = l8(ss[0], env)
+    must(rc == 0, o[-300:])
+    rc, o = l8(ss[1], env, cwd=TF_DIR)
+    must(rc == 0, o[-900:])
+    owner_ok(f"{TF_DIR}/tfplan")
+    owner_ok(f"{TF_DIR}/tfplan.txt")
+    rc, txt = agent_check(f"cat {WS}/{TF_DIR}/tfplan.txt")
+    must("Plan:" in txt or "No changes" in txt, "tfplan.txt has no plan summary")
+    # stash simulation: the same file set the Jenkinsfile stashes
+    rc, o = agent_check(f"cd {WS} && tar -cf /tmp/stash-tfplan.tar {TF_DIR}/tfplan {TF_DIR}/tfplan.txt {TF_DIR}/.terraform.lock.hcl")
+    must(rc == 0, "stash contents missing (lock file?): " + o)
+    return re.search(r"(Plan: [^\n]*|No changes[^\n]*)", txt).group(1)
+
+
+@stage("IaC / Approval handoff")
+def st_approval():
+    # Jenkins: Approval and Apply run in DIFFERENT workspaces. Simulate with a second, empty workspace.
+    ws2 = WS + "@2"
+    files = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT, capture_output=True).stdout
+    tar = subprocess.run(["tar", "--null", "-T", "-", "-cf", "-"], cwd=ROOT, input=files, capture_output=True).stdout
+    agent_check(f"rm -rf {ws2} && mkdir -p {ws2}")
+    subprocess.run(["docker", "exec", "-i", AGENT, "tar", "-x", "-C", ws2], input=tar, capture_output=True)  # SCM checkout of the stage
+    rc, o = agent_check(f"tar -xf /tmp/stash-tfplan.tar -C {ws2} && ls {ws2}/{TF_DIR}")     # unstash overlay
+    must(rc == 0 and "tfplan" in o, "unstash into a fresh workspace failed: " + o)
+    rc, o = agent_check(f"wc -c < {ws2}/{TF_DIR}/tfplan.txt")
+    must(int(o.strip()) > 0, "empty plan text for the input prompt")
+    return f"plan text {o.strip()} chars (prompt drops 'known after apply' lines, caps at 12000); input itself is UI-only"
+
+
+@stage("IaC / Terraform Apply")
+def st_tf_apply():
+    ss = snippets("Terraform Apply")
+    must(len(ss) == 2, f"expected 2 snippets (rm, apply), got {len(ss)}")
+    env = lab08_env()
+    ws2 = WS + "@2"
+    # run in the "@2" workspace that only has the unstashed plan (like the real second agent context)
+    rc, o = sh(["docker", "exec", "-i", "-e", f"WORKSPACE={ws2}"] + sum([["-e", f"{k}={v}"] for k, v in env.items()], []) +
+               ["-w", f"{ws2}/{TF_DIR}", AGENT, "sh", "-s"], inp="set -e\n" + ss[1])
+    must(rc == 0, "apply failed: " + o[-900:])
+    must("Apply complete!" in o, "no 'Apply complete!' line: " + o[-300:])
+    rc, o = agent_check(f"cat {ws2}/{TF_DIR}/tf-outputs.json")
+    outs = json.loads(o)
+    iid = outs["instance_id"]["value"]
+    addr = outs["instance_address"]["value"]
+    # independent checks (separate process, LocalStack + S3, not Terraform)
+    rc, o = aws_cli(["ec2", "describe-instances", "--instance-ids", iid, "--query", "Reservations[].Instances[].State.Name", "--output", "text"])
+    must(rc == 0 and "running" in o, f"instance {iid} not running in LocalStack: {o.strip()}")
+    rc, o = aws_cli(["s3", "ls", "s3://taskflow-tfstate/taskflow-api/"])
+    must("verify-loop.tfstate" in o, "harness state object missing in S3: " + o)
+    # carry the applied state's view back to the main workspace for the inventory stage
+    return f"instance {iid} running, address {addr}, state in S3"
+
+
+@stage("IaC / Configure with Ansible")
+def st_ansible():
+    ss = snippets("Configure with Ansible")
+    must(len(ss) == 3, f"expected 3 snippets (init, inventory, playbook), got {len(ss)}: {ss}")
+    env = lab08_env()
+    rc, o = l8(ss[0], env, cwd=TF_DIR)
+    must(rc == 0, "terraform init: " + o[-400:])
+    rc, o = l8(ss[1], env)
+    must(rc == 0, "inventory: " + o[-400:])
+    rc, o = l8(ss[2], env, cwd="infra/ansible")
+    must(rc == 0, "ansible-playbook: " + o[-900:])
+    must("failed=0" in o and "unreachable=0" in o, "recap: " + o[-300:])
+    rc, ini = agent_check(f"cat {WS}/infra/ansible/inventory/hosts.ini")
+    rc2, out = agent_check(f"cd {WS}/{TF_DIR} && terraform output -raw instance_address")
+    addr = out.strip().splitlines()[-1] if out.strip() else ""
+    must("ansible_connection=local" in ini and "localhost" in ini, "inventory: " + ini)
+    must(addr and f"terraform_reported_address={addr}" in ini, f"inventory lacks Terraform address {addr!r}: {ini}")
+    must("Pull taskflow-api image" in o and "Image digest: [localhost:5000/taskflow-api@sha256:" in o, "pull/digest missing")
+    rc, o = agent_check(f"docker image inspect localhost:5000/taskflow-api:{env['SHORT_SHA']} --format '{{{{.Id}}}}'")
+    must(rc == 0, "image not present after playbook: " + o)
+    rc, o = l8(ss[2], env, cwd="infra/ansible")     # second run: idempotency
+    must(rc == 0 and "changed=0" in o and "failed=0" in o, "second playbook run not idempotent: " + o[-300:])
+    return f"inventory has localhost+local+address {addr}; playbook rc=0, 2nd run changed=0"
+
+
+def lab08_cleanup():
+    """Destroy ONLY what the harness created (throwaway state key), then drop that state object."""
+    env = lab08_env()
+    rc, o = sh(["docker", "exec", "-i", "-e", "TF_IN_AUTOMATION=1", "-e", f"TF_CLI_ARGS_init={env['TF_CLI_ARGS_init']}",
+                "-w", f"{WS}/{TF_DIR}", AGENT, "sh", "-c",
+                "terraform init -no-color >/dev/null && terraform destroy -auto-approve -no-color | tail -2 && terraform show -no-color"])
+    print("[cleanup] harness terraform destroy:", o.strip().replace("\n", " | ")[-200:])
+    aws_cli(["s3", "rm", f"s3://taskflow-tfstate/{HARNESS_KEY}"])
+    sh(["docker", "exec", AGENT, "sh", "-c", f"rm -rf {WS}@2"])
+
+
+LAB08_STAGES = [st_tf_validate, st_ansible_lint, st_iac_scan, st_tf_plan, st_approval, st_tf_apply, st_ansible]
+
+
 STAGES = [st_install, st_secrets, st_eslint, st_semgrep, st_sca, st_sbom, st_policy,
           st_lint, st_unit, st_sonar, st_e2e, st_build_image, st_trivy, st_bluegreen]
 
 def seed_workspace():
     """Fresh Jenkins-style checkout: tracked files (working-tree state), owned by the agent user."""
     sh(["docker", "exec", AGENT, "sh", "-c", f"rm -rf {WS} /tmp/stash-*; mkdir -p {WS}"])
-    files = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT, capture_output=True).stdout
+    # tracked + new-but-not-ignored files (a Jenkins checkout of the commit about to be made)
+    files = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"], cwd=ROOT, capture_output=True).stdout
     tar = subprocess.run(["tar", "--null", "-T", "-", "-cf", "-"], cwd=ROOT, input=files, capture_output=True).stdout
     p = subprocess.run(["docker", "exec", "-i", AGENT, "tar", "-x", "-C", WS], input=tar, capture_output=True)
     if p.returncode != 0:
@@ -452,6 +628,8 @@ if __name__ == "__main__":
     passes = int(args[0]) if args else 2
     if "--lab07" in sys.argv:
         STAGES = STAGES[-3:]  # Build Image, Container Scan, Blue/Green Deploy only
+    if "--lab08" in sys.argv:
+        STAGES = LAB08_STAGES
     seed_workspace()
     for n in range(1, passes + 1):
         print(f"\n===== PASS {n} ({'fresh checkout' if n == 1 else 'PERSISTENT workspace, stale state from pass ' + str(n-1)}) =====", flush=True)
@@ -459,6 +637,8 @@ if __name__ == "__main__":
         for st in STAGES:
             st()
         print(f"----- pass {n} wall time (sequential, no image-pull time excluded): {time.time()-t0:.0f}s", flush=True)
+    if "--lab08" in sys.argv:
+        lab08_cleanup()
     if "--keep" not in sys.argv:
         sh(["docker", "exec", AGENT, "sh", "-c", f"rm -rf {WS} /tmp/stash-*"])
     bad = [r for r in results if not r[1]]

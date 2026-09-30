@@ -5,6 +5,9 @@ pipeline {
         APP_NAME = 'taskflow-api'
         NODE_ENV = 'test'
         REGISTRY = 'localhost:5000'
+        // Lab 08: no interactive prompts / hints from Terraform in the console
+        TF_IN_AUTOMATION = '1'
+        TF_INPUT = '0'
     }
 
     parameters {
@@ -13,11 +16,12 @@ pipeline {
     }
 
     options {
-        timeout(time: 20, unit: 'MINUTES')
+        timeout(time: 45, unit: 'MINUTES')
         // A hung npm install or test run must not hold the executor forever —
         // an executor stuck on one dead build blocks every other queued build
         // from ever running on this agent. Raised from 10 for Lab 07: Build Image + Trivy
-        // (first run downloads its DB) + kubectl rollout add several minutes.
+        // (first run downloads its DB) + kubectl rollout add several minutes. Raised again
+        // for Lab 08: the whole run now includes IaC stages AND the (up to 15 min) human approval wait.
         disableConcurrentBuilds()
         // Two builds flipping Service/taskflow at once would corrupt the recorded previous color.
     }
@@ -449,6 +453,120 @@ pipeline {
                         kubectl get svc taskflow -o yaml
                         [ "$ACTIVE" = "$PREV" ]
                     '''
+                }
+            }
+        }
+        stage('IaC Lint & Validate') {
+            parallel {
+                stage('Terraform Validate') {
+                    agent { label 'linux-build' }
+                    steps {
+                        dir('infra/terraform') {
+                            sh '''
+                                terraform init -backend=false -no-color
+                                terraform validate -no-color
+                                terraform fmt -check -recursive
+                            '''
+                        }
+                    }
+                }
+                stage('Ansible Lint') {
+                    agent { label 'linux-build' }
+                    steps {
+                        sh 'ansible-lint infra/ansible/playbook.yml'
+                    }
+                }
+            }
+        }
+        stage('IaC Security Scan') {
+            agent { label 'linux-build' }
+            steps {
+                dir('infra/terraform') {
+                    // Run BOTH scanners so the console shows every finding, then fail if either
+                    // one failed. No `|| true`: a finding must turn this stage red before any plan exists.
+                    sh '''
+                        set +e
+                        echo "===== tfsec ====="
+                        tfsec . --no-colour
+                        TFSEC_RC=$?
+                        echo "===== Checkov ====="
+                        checkov -d . --compact
+                        CHECKOV_RC=$?
+                        echo "tfsec exit=$TFSEC_RC checkov exit=$CHECKOV_RC"
+                        [ "$TFSEC_RC" -eq 0 ] && [ "$CHECKOV_RC" -eq 0 ]
+                    '''
+                }
+            }
+        }
+        stage('Terraform Plan') {
+            agent { label 'linux-build' }
+            steps {
+                // Persistent workspace: never let a previous build's plan be re-used.
+                sh 'rm -f infra/terraform/tfplan infra/terraform/tfplan.txt infra/terraform/tf-outputs.json'
+                dir('infra/terraform') {
+                    sh '''
+                        terraform init -no-color
+                        terraform plan -no-color -out=tfplan
+                        terraform show -no-color tfplan > tfplan.txt
+                    '''
+                }
+                // agent-per-stage = separate workspaces: the plan (and the provider lock it was made
+                // with) must travel by stash. This exact plan file is what Apply will consume.
+                stash name: 'tfplan-artifact', includes: 'infra/terraform/tfplan,infra/terraform/tfplan.txt,infra/terraform/.terraform.lock.hcl'
+                archiveArtifacts artifacts: 'infra/terraform/tfplan.txt', allowEmptyArchive: true
+            }
+        }
+        stage('Approval') {
+            agent { label 'linux-build' }
+            steps {
+                unstash 'tfplan-artifact'
+                script {
+                    def plan = readFile('infra/terraform/tfplan.txt')
+                    echo plan
+                    // The prompt shows the plan WITHOUT the "(known after apply)" noise, capped so the
+                    // text box stays usable; the untouched full plan is in this console log and in the
+                    // tfplan.txt artifact.
+                    def summary = plan.readLines().findAll { !it.contains('(known after apply)') }.join('\n')
+                    def limit = 12000
+                    def shown = summary.length() > limit ?
+                        summary.take(limit) + "\n... [truncated: full plan in the console log and tfplan.txt artifact]" : summary
+                    timeout(time: 15, unit: 'MINUTES') {
+                        input message: 'Review the Terraform plan below. Apply exactly this plan?', ok: 'Apply',
+                              parameters: [text(name: 'PlanSummary', defaultValue: shown,
+                                                description: 'Terraform plan (read-only, for review). Changing this text does NOT change what is applied.')]
+                    }
+                }
+                stash name: 'tfplan-artifact-2', includes: 'infra/terraform/tfplan,infra/terraform/tfplan.txt,infra/terraform/.terraform.lock.hcl'
+            }
+        }
+        stage('Terraform Apply') {
+            agent { label 'linux-build' }
+            steps {
+                sh 'rm -f infra/terraform/tfplan infra/terraform/tf-outputs.json'
+                unstash 'tfplan-artifact-2'
+                dir('infra/terraform') {
+                    // apply consumes the reviewed plan file: no new plan is computed after approval
+                    sh '''
+                        terraform init -no-color
+                        terraform apply -no-color tfplan
+                        terraform output -json > tf-outputs.json
+                        echo "===== terraform output ====="
+                        terraform output -no-color
+                    '''
+                }
+                archiveArtifacts artifacts: 'infra/terraform/tf-outputs.json'
+            }
+        }
+        stage('Configure with Ansible') {
+            agent { label 'linux-build' }
+            steps {
+                // dynamic_inventory.sh reads `terraform output`, which needs an initialised backend in THIS workspace
+                dir('infra/terraform') {
+                    sh 'terraform init -no-color'
+                }
+                sh 'bash infra/ansible/inventory/dynamic_inventory.sh'
+                dir('infra/ansible') {
+                    sh "ansible-playbook -i inventory/hosts.ini playbook.yml -e image_tag=${env.SHORT_SHA}"
                 }
             }
         }

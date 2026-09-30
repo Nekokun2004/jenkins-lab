@@ -16,3 +16,7 @@ jenkins_lab
 
 jenkins_home.tgz
 agent.jar
+
+# Lab 08 IaC sources (and Terraform .terraform/ caches in the persistent workspace) are not part of the app image
+infra
+Dockerfile.agent

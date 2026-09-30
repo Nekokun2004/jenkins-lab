@@ -1,0 +1,55 @@
+FROM jenkins/inbound-agent:latest-jdk21
+
+# Agent image for Labs 01-08. Everything a stage needs is baked in (nothing is hand-installed
+# into the running container any more), so `docker rm` + `docker run` of the agent is safe.
+ARG TERRAFORM_VERSION=1.9.8
+ARG TFSEC_VERSION=v1.28.14
+ARG KUBECTL_VERSION=v1.37.1
+ARG KIND_VERSION=v0.33.0
+
+USER root
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends curl ca-certificates gnupg unzip jq python3 python3-venv python3-pip; \
+    # --- Node.js 20 (Lab 01+)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -; \
+    apt-get install -y --no-install-recommends nodejs; \
+    # --- Docker CLI + Compose plugin (Lab 03/05)
+    . /etc/os-release; \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg; \
+    echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends docker-ce-cli docker-compose-plugin; \
+    # --- kubectl + kind (Lab 07; previously docker-cp'd by hand)
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" -o /usr/local/bin/kubectl; \
+    curl -fsSL "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-${ARCH}" -o /usr/local/bin/kind; \
+    chmod +x /usr/local/bin/kubectl /usr/local/bin/kind; \
+    # --- Terraform + tfsec (Lab 08)
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip" -o /tmp/terraform.zip; \
+    unzip -q /tmp/terraform.zip terraform -d /usr/local/bin; \
+    rm /tmp/terraform.zip; \
+    curl -fsSL "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-${ARCH}" -o /usr/local/bin/tfsec; \
+    chmod +x /usr/local/bin/tfsec; \
+    # --- Python tools, one venv each (checkov / ansible / awscli pin conflicting deps)
+    for t in ansible-core:ansible ansible-lint:ansible awscli:awscli checkov:checkov; do \
+        pkg="${t%%:*}"; venv="/opt/venv-${t##*:}"; \
+        [ -d "$venv" ] || python3 -m venv "$venv"; \
+        "$venv/bin/pip" install --no-cache-dir "$pkg"; \
+    done; \
+    for b in ansible ansible-playbook ansible-galaxy ansible-inventory ansible-lint; do ln -sf /opt/venv-ansible/bin/$b /usr/local/bin/$b; done; \
+    ln -sf /opt/venv-awscli/bin/aws /usr/local/bin/aws; \
+    ln -sf /opt/venv-checkov/bin/checkov /usr/local/bin/checkov; \
+    # --- Terraform provider cache (TF_PLUGIN_CACHE_DIR), shared by every stage/workspace
+    mkdir -p /home/jenkins/.terraform.d/plugin-cache; \
+    chown -R jenkins:jenkins /home/jenkins/.terraform.d; \
+    rm -rf /var/lib/apt/lists/*; \
+    node --version; npm --version; docker --version; docker compose version; \
+    kubectl version --client; kind version; jq --version; \
+    terraform --version; tfsec --version; ansible --version; ansible-lint --version; \
+    checkov --version; aws --version
+
+ENV TF_PLUGIN_CACHE_DIR=/home/jenkins/.terraform.d/plugin-cache
+
+USER jenkins
