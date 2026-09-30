@@ -1,0 +1,541 @@
+Started taskflow-mobile-pipeline #3
+Started from command line by NeAd
+Checking out git https://github.com/nawaphonST1/subscription_track.git into /var/jenkins_home/workspace/taskflow-mobile-pipeline@script/4bfa08779e56dc618546347f276660d32336ab9c66899cb94b469036e6b672a4 to read Jenkinsfile.mobile
+The recommended git tool is: NONE
+No credentials specified
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/taskflow-mobile-pipeline@script/4bfa08779e56dc618546347f276660d32336ab9c66899cb94b469036e6b672a4/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/nawaphonST1/subscription_track.git # timeout=10
+Fetching upstream changes from https://github.com/nawaphonST1/subscription_track.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/nawaphonST1/subscription_track.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10-mobile-pipeline^{commit} # timeout=10
+Checking out Revision 55ad627558a653032d59407156af6adf46bc3557 (refs/remotes/origin/lab10-mobile-pipeline)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 55ad627558a653032d59407156af6adf46bc3557 # timeout=10
+Commit message: "feat: add Lab 10 mobile CI pipeline"
+ > git rev-list --no-walk 55ad627558a653032d59407156af6adf46bc3557 # timeout=10
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-mobile-pipeline
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Declarative: Checkout SCM)
+[Pipeline] checkout
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-mobile-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/nawaphonST1/subscription_track.git # timeout=10
+Fetching upstream changes from https://github.com/nawaphonST1/subscription_track.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/nawaphonST1/subscription_track.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision 55ad627558a653032d59407156af6adf46bc3557 (refs/remotes/origin/lab10-mobile-pipeline)
+ > git rev-parse refs/remotes/origin/lab10-mobile-pipeline^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f 55ad627558a653032d59407156af6adf46bc3557 # timeout=10
+Commit message: "feat: add Lab 10 mobile CI pipeline"
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ docker inspect -f . ghcr.io/cirruslabs/flutter:stable
+.
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+$ docker run -t -d -u 1000:1000 -u root:root -v subscription-mobile-pub-cache:/root/.pub-cache -v subscription-mobile-gradle:/root/.gradle -w /home/jenkins/agent/workspace/taskflow-mobile-pipeline --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** ghcr.io/cirruslabs/flutter:stable cat
+$ docker top 72327c56fc914a2eafd032ca0f801de7301dd32c6de0e3607cb23308d722410b -eo pid,comm
+[Pipeline] {
+[Pipeline] timeout
+Timeout set to expire in 40 min
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Flutter Analyze)
+[Pipeline] dir
+Running in /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile
+[Pipeline] {
+[Pipeline] sh
++ flutter --version
+Flutter 3.44.0 • channel [user-branch] • unknown source
+Framework • revision 559ffa3f75 (5 months ago) • 2026-05-15 14:13:13 -0700
+Engine • hash fcf463a2242790d1fdcd9d044f533080f5022e18 (revision 4c525dac5e) (4 months ago) • 2026-05-15 19:00:04.000Z
+Tools • Dart 3.12.0 • DevTools 2.57.0
+[Pipeline] sh
++ flutter pub get
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.7 (4.0.11 available)
+  build_config 1.3.2 (1.3.3 available)
+  build_daemon 4.1.3 (retracted, 4.1.6 available)
+  build_runner 2.15.1 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.11.1 (4.12.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 14.8.1 (18.0.2 available)
+  html 0.15.6 (0.15.7 available)
+  image 4.9.1 (4.10.1 available)
+  io 1.0.5 (1.1.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.7.0 (2.8.0 available)
+< matcher 0.12.19 (was 0.12.20) (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+< meta 1.18.0 (was 1.19.0) (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  pool 1.5.2 (1.5.3 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  source_gen 4.2.4 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+< test 1.31.0 (was 1.31.1) (1.32.0 available)
+< test_api 0.7.11 (was 0.7.12) (0.7.14 available)
+< test_core 0.6.17 (was 0.6.18) (0.6.20 available)
+< vector_math 2.2.0 (was 2.4.2) (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  xml 7.0.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Changed 6 dependencies!
+49 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+[Pipeline] sh
++ flutter analyze
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.7 (4.0.11 available)
+  build_config 1.3.2 (1.3.3 available)
+  build_daemon 4.1.3 (retracted, 4.1.6 available)
+  build_runner 2.15.1 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.11.1 (4.12.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 14.8.1 (18.0.2 available)
+  html 0.15.6 (0.15.7 available)
+  image 4.9.1 (4.10.1 available)
+  io 1.0.5 (1.1.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.7.0 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  pool 1.5.2 (1.5.3 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  source_gen 4.2.4 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  xml 7.0.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+49 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Analyzing mobile...                                             
+No issues found! (ran in 12.9s)
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Flutter Test)
+[Pipeline] dir
+Running in /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile
+[Pipeline] {
+[Pipeline] sh
++ flutter test --coverage
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.7 (4.0.11 available)
+  build_config 1.3.2 (1.3.3 available)
+  build_daemon 4.1.3 (retracted, 4.1.6 available)
+  build_runner 2.15.1 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.11.1 (4.12.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 14.8.1 (18.0.2 available)
+  html 0.15.6 (0.15.7 available)
+  image 4.9.1 (4.10.1 available)
+  io 1.0.5 (1.1.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.7.0 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  pool 1.5.2 (1.5.3 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  source_gen 4.2.4 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  xml 7.0.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+49 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/core/widgets/confirmation_dialog_test.dart
+00:00 +0: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:00 +1: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:00 +2: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:00 +3: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:00 +4: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:00 +5: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:01 +6: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:01 +7: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:01 +8: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: renders Dashboard tab by default
+00:02 +9: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: switches between every integrated destination
+00:02 +10: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: switches between every integrated destination
+00:02 +11: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: keeps navigation visible on nested dashboard routes
+00:02 +12: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: uses bottom navigation on a mobile-width window
+00:03 +13: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/routing/app_router_test.dart: Filter chips update the visible subscription list
+00:03 +14: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/onboarding/presentation/onboarding_page_theme_test.dart: keeps branded-dark text colors under the light app theme
+00:03 +15: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/onboarding/presentation/onboarding_page_theme_test.dart: keeps branded-dark text colors under the light app theme
+00:04 +16: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: adapts navigation and tab content for desktop width
+00:04 +17: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: header avatar opens the profile destination
+00:04 +18: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: filters subscriptions by search and category
+00:04 +19: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: filters subscriptions by search and category
+00:05 +20: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: opens subscription details when a row is tapped
+00:05 +21: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +22: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +23: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +24: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +25: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +26: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +27: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: form fields inherit readable light-theme text
+00:06 +28: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/app/presentation/main_navigation_shell_test.dart: updates income and recalculates the creep score
+00:06 +29: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: filter chips use light-theme surfaces
+00:06 +30: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/presentation/subscription_theme_test.dart: detail sheet text remains readable in light mode
+00:07 +31: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/data/subscription_repository_test.dart: InMemorySubscriptionRepository performs add, read, update, toggle, and delete
+00:07 +32: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/data/subscription_repository_test.dart: InMemorySubscriptionRepository throws clear exceptions for invalid ids and duplicates
+00:07 +33: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/subscriptions/data/subscription_repository_test.dart: InMemorySubscriptionRepository can override repository provider in a ProviderContainer
+00:07 +34: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/notifications/presentation/notification_ui_extensions_test.dart: formats dates relative to calendar days
+00:08 +35: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/notifications/presentation/notification_theme_test.dart: unread notification title uses readable light-theme text
+00:08 +36: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/notifications/presentation/notification_theme_test.dart: unread notification title uses readable light-theme text
+00:08 +37: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/notifications/presentation/notification_theme_test.dart: unread notification title uses readable light-theme text
+00:09 +38: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/notifications/presentation/notification_theme_test.dart: empty state uses readable light-theme text
+00:09 +39: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/settings/presentation/settings_tab_test.dart: theme switch updates the effective app brightness
+00:09 +40: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/settings/presentation/settings_tab_test.dart: theme switch updates the effective app brightness
+00:10 +41: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/settings/presentation/settings_tab_test.dart: theme switch updates the effective app brightness
+00:10 +42: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/settings/presentation/settings_tab_test.dart: theme switch updates the effective app brightness
+00:10 +43: /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/test/features/settings/presentation/settings_tab_test.dart: notification reminder remains independently controlled
+00:11 +44: All tests passed!
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (SCA — osv-scanner)
+[Pipeline] dir
+Running in /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile
+[Pipeline] {
+[Pipeline] sh
++ rm -f osv-scanner osv-report.txt
++ curl -fsSL https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64 -o osv-scanner
++ chmod +x osv-scanner
++ ./osv-scanner --version
+osv-scanner version: 2.6.0
+osv-scalibr version: 0.5.2
+commit: e840a6e8adb14b7777c78e26cfbf6e2abc1d1fc6
+built at: 2026-09-14T01:44:58Z
++ rc=0
++ ./osv-scanner --lockfile=pubspec.lock
++ cat osv-report.txt
+Starting filesystem walk for root: /
+Scanned /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile/pubspec.lock file and found 112 packages
+End status: 0 dirs visited, 1 inodes visited, 1 Extract calls, 1.688121ms elapsed, 1.688182ms wall time
+
+No issues found
++ rm -f osv-scanner
++ echo osv-scanner exit code: 0 (0 = clean, 1 = vulnerabilities found, reported only)
+osv-scanner exit code: 0 (0 = clean, 1 = vulnerabilities found, reported only)
++ [ 0 -ne 0 ]
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Debug APK)
+[Pipeline] dir
+Running in /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile
+[Pipeline] {
+[Pipeline] sh
++ rm -rf build/app/outputs
++ flutter build apk --debug
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.7 (4.0.11 available)
+  build_config 1.3.2 (1.3.3 available)
+  build_daemon 4.1.3 (retracted, 4.1.6 available)
+  build_runner 2.15.1 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.11.1 (4.12.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 14.8.1 (18.0.2 available)
+  html 0.15.6 (0.15.7 available)
+  image 4.9.1 (4.10.1 available)
+  io 1.0.5 (1.1.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.7.0 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  pool 1.5.2 (1.5.3 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  source_gen 4.2.4 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  xml 7.0.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+49 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Running Gradle task 'assembleDebug'...                          
+Checking the license for package NDK (Side by side) 28.2.13676358 in /opt/android-sdk-linux/licenses
+License for package NDK (Side by side) 28.2.13676358 accepted.
+Preparing "Install NDK (Side by side) 28.2.13676358 v.28.2.13676358".
+"Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" ready.
+Installing NDK (Side by side) 28.2.13676358 in /opt/android-sdk-linux/ndk/28.2.13676358
+"Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" complete.
+"Install NDK (Side by side) 28.2.13676358 v.28.2.13676358" finished.
+Checking the license for package CMake 3.22.1 in /opt/android-sdk-linux/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /opt/android-sdk-linux/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+"Install CMake 3.22.1 v.3.22.1" finished.
+Running Gradle task 'assembleDebug'...                            124.4s
+✓ Built build/app/outputs/flutter-apk/app-debug.apk
++ test -s build/app/outputs/flutter-apk/app-debug.apk
++ ls -l build/app/outputs/flutter-apk/app-debug.apk
+-rw-r--r-- 1 root root 150975878 Sep 30 22:12 build/app/outputs/flutter-apk/app-debug.apk
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Signed Release AAB)
+[Pipeline] dir
+Running in /home/jenkins/agent/workspace/taskflow-mobile-pipeline/apps/mobile
+[Pipeline] {
+[Pipeline] withCredentials
+Masking supported pattern matches of $KEYSTORE_FILE or $KEYSTORE_PASSWORD or $KEY_ALIAS
+[Pipeline] {
+[Pipeline] sh
++ flutter build appbundle --release --build-name=1.0.0 --build-number=3
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 99.0.0 (108.0.0 available)
+  analyzer 12.1.0 (14.4.0 available)
+  analyzer_buffer 0.3.3 (0.3.4 available)
+  archive 4.0.9 (4.3.0 available)
+  build 4.0.7 (4.0.11 available)
+  build_config 1.3.2 (1.3.3 available)
+  build_daemon 4.1.3 (retracted, 4.1.6 available)
+  build_runner 2.15.1 (2.16.1 available)
+  built_collection 5.1.1 (5.1.2 available)
+  built_value 8.12.6 (8.13.0 available)
+  cli_util 0.4.2 (0.6.0 available)
+  clock 1.1.2 (1.1.3 available)
+  code_builder 4.11.1 (4.12.0 available)
+  dart_style 3.1.8 (3.1.13 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_riverpod 3.3.2 (3.4.3 available)
+  freezed 3.2.6-dev.1 (4.0.2 available)
+  glob 2.1.3 (2.2.0 available)
+  go_router 14.8.1 (18.0.2 available)
+  html 0.15.6 (0.15.7 available)
+  image 4.9.1 (4.10.1 available)
+  io 1.0.5 (1.1.0 available)
+  lints 5.1.1 (6.1.0 available)
+  logger 2.7.0 (2.8.0 available)
+  matcher 0.12.19 (0.12.20 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.0 (1.19.0 available)
+  mime 2.0.0 (2.1.0 available)
+  mockito 5.6.4 (5.8.1 available)
+  package_config 2.2.0 (3.0.0 available)
+  petitparser 7.0.2 (7.1.0 available)
+  pool 1.5.2 (1.5.3 available)
+  pub_semver 2.2.0 (2.2.1 available)
+  pubspec_parse 1.5.0 (1.6.0 available)
+  riverpod 3.3.2 (3.4.3 available)
+  riverpod_analyzer_utils 1.0.0-dev.10 (1.0.0-dev.12 available)
+  riverpod_annotation 4.0.3 (4.0.7 available)
+  riverpod_generator 4.0.4 (4.0.9 available)
+  source_gen 4.2.4 (4.3.0 available)
+  source_maps 0.10.13 (0.10.14 available)
+  stack_trace 1.12.1 (1.12.2 available)
+  stream_transform 2.1.1 (2.1.2 available)
+  test 1.31.0 (1.32.0 available)
+  test_api 0.7.11 (0.7.14 available)
+  test_core 0.6.17 (0.6.20 available)
+  vector_math 2.2.0 (2.4.3 available)
+  vm_service 15.2.0 (15.3.0 available)
+  xml 7.0.1 (7.1.0 available)
+  yaml 3.1.3 (3.1.4 available)
+Got dependencies!
+49 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Running Gradle task 'bundleRelease'...                             54.5s
+✓ Built build/app/outputs/bundle/release/app-release.aab (50.9MB)
++ AAB=build/app/outputs/bundle/release/app-release.aab
++ test -s build/app/outputs/bundle/release/app-release.aab
++ ls -l build/app/outputs/bundle/release/app-release.aab
+-rw-r--r-- 1 root root 50852827 Sep 30 22:13 build/app/outputs/bundle/release/app-release.aab
++ keytool -printcert -jarfile build/app/outputs/bundle/release/app-release.aab
++ tee aab-signer.txt
+Signer #1:
+
+Certificate #1:
+Owner: CN=Lab10, OU=Test, O=JenkinsLab, L=Bangkok, ST=Bangkok, C=TH
+Issuer: CN=Lab10, OU=Test, O=JenkinsLab, L=Bangkok, ST=Bangkok, C=TH
+Serial number: 842b2e54c0541cd9
+Valid from: Wed Sep 30 17:45:31 GMT 2026 until: Sun Feb 15 17:45:31 GMT 2054
+Certificate fingerprints:
+	 SHA1: AE:AE:D8:DD:96:61:BD:81:E2:11:89:BB:20:D4:BA:1A:BB:2F:3D:8B
+	 SHA256: 7A:CC:9D:BA:61:29:1A:5B:0D:82:22:99:9E:F6:25:E9:C3:62:A5:43:83:DE:C6:37:68:E3:9B:1D:42:D6:2F:52
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 53 4E 60 97 90 E1 16 73   0C 93 5B 78 50 4A 92 F4  SN`....s..[xPJ..
+0010: 09 7C 16 03                                        ....
+]
+]
+
+
++ grep -q CN=Lab10 aab-signer.txt
+[Pipeline] }
+[Pipeline] // withCredentials
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] sh
++ stat -c %u:%g .
++ chown -R 1000:1000 .
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // timeout
+[Pipeline] }
+$ docker stop --time=1 72327c56fc914a2eafd032ca0f801de7301dd32c6de0e3607cb23308d722410b
+$ docker rm -f --volumes 72327c56fc914a2eafd032ca0f801de7301dd32c6de0e3607cb23308d722410b
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS
+Completed taskflow-mobile-pipeline #3 : SUCCESS

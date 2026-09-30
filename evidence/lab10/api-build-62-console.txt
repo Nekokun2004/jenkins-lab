@@ -1,0 +1,1930 @@
+Started taskflow-pipeline #62
+Started from command line by NeAd
+Obtained Jenkinsfile from git https://github.com/Nekokun2004/jenkins-lab.git
+[Pipeline] Start of Pipeline
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] timeout
+Timeout set to expire in 45 min
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Install)
+[Pipeline] podTemplate
+[Pipeline] {
+[Pipeline] node
+Created Pod: taskflow-control-plane default/taskflow-pipeline-62-ww22n-5mhps-qdw9v
+[PodInfo] default/taskflow-pipeline-62-ww22n-5mhps-qdw9v
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][PodSandboxNotReady] no pod sandbox exists
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+[PodInfo] default/taskflow-pipeline-62-ww22n-5mhps-qdw9v
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+Still waiting to schedule task
+‘taskflow-pipeline-62-ww22n-5mhps-qdw9v’ is offline
+Agent taskflow-pipeline-62-ww22n-5mhps-qdw9v is provisioned from template taskflow-pipeline_62-ww22n-5mhps
+---
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  annotations:
+    kubernetes.jenkins.io/last-refresh: "1790808242565"
+    buildUrl: "http://172.17.0.1:8080/job/taskflow-pipeline/62/"
+    runUrl: "job/taskflow-pipeline/62/"
+  labels:
+    jenkins: "slave"
+    jenkins/label-digest: "2f9607ee0daa9d299631cc16f1767c76fb2c448d"
+    jenkins/label: "taskflow-pipeline_62-ww22n"
+    kubernetes.jenkins.io/controller: "http___172_17_0_1_8080x"
+  name: "taskflow-pipeline-62-ww22n-5mhps-qdw9v"
+  namespace: "default"
+spec:
+  containers:
+  - command:
+    - "cat"
+    image: "node:20-alpine"
+    name: "node"
+    tty: true
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  - env:
+    - name: "JENKINS_SECRET"
+      value: "********"
+    - name: "REMOTING_OPTS"
+      value: "-noReconnectAfter 1d"
+    - name: "JENKINS_AGENT_NAME"
+      value: "taskflow-pipeline-62-ww22n-5mhps-qdw9v"
+    - name: "JENKINS_NAME"
+      value: "taskflow-pipeline-62-ww22n-5mhps-qdw9v"
+    - name: "JENKINS_AGENT_WORKDIR"
+      value: "/home/jenkins/agent"
+    - name: "JENKINS_URL"
+      value: "http://172.17.0.1:8080/"
+    image: "jenkins/inbound-agent:3391.va_37fa_a_305d6d-1-jdk25"
+    name: "jnlp"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  nodeSelector:
+    kubernetes.io/os: "linux"
+  restartPolicy: "Never"
+  volumes:
+  - emptyDir:
+      medium: ""
+    name: "workspace-volume"
+
+Running on taskflow-pipeline-62-ww22n-5mhps-qdw9v in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Cloning the remote Git repository
+Cloning repository https://github.com/Nekokun2004/jenkins-lab.git
+ > git init /home/jenkins/agent/workspace/taskflow-pipeline # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+ > git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+ > git rev-list --no-walk 8cebc6e20a821f9fc81234c5cf2d84796e57220d # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] container
+[Pipeline] {
+[Pipeline] sh
++ npm ci
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+
+added 452 packages, and audited 453 packages in 9s
+
+72 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+[Pipeline] }
+[Pipeline] // container
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // podTemplate
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Fast Checks)
+[Pipeline] parallel
+[Pipeline] { (Branch: Lint)
+[Pipeline] { (Branch: Unit Test)
+[Pipeline] { (Branch: Secrets Detection)
+[Pipeline] { (Branch: SAST)
+[Pipeline] { (Branch: SCA — npm audit)
+[Pipeline] stage
+[Pipeline] { (Lint)
+[Pipeline] stage
+[Pipeline] { (Unit Test)
+[Pipeline] stage
+[Pipeline] { (Secrets Detection)
+[Pipeline] stage
+[Pipeline] { (SAST)
+[Pipeline] stage
+[Pipeline] { (SCA — npm audit)
+[Pipeline] podTemplate
+[Pipeline] {
+[Pipeline] podTemplate
+[Pipeline] {
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline@2
+[Pipeline] node
+Created Pod: taskflow-control-plane default/taskflow-pipeline-62-cvtb6-7ggrh-qsrlv
+[Pipeline] node
+[PodInfo] default/taskflow-pipeline-62-cvtb6-7ggrh-qsrlv
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][PodSandboxNotReady] no pod sandbox exists
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+[Pipeline] stage
+[Pipeline] { (ESLint Security)
+[Pipeline] {
+[Pipeline] {
+Created Pod: taskflow-control-plane default/taskflow-pipeline-62-dv8nv-zfmv9-hkz4z
+[Pipeline] checkout
+[PodInfo] default/taskflow-pipeline-62-cvtb6-7ggrh-qsrlv
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+[PodInfo] default/taskflow-pipeline-62-dv8nv-zfmv9-hkz4z
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][PodSandboxNotReady] no pod sandbox exists
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+[Pipeline] checkout
+Fetching changes from the remote Git repository
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline@2/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+[Pipeline] node
+[PodInfo] default/taskflow-pipeline-62-dv8nv-zfmv9-hkz4z
+	Container [jnlp] waiting [ContainerCreating] No message
+	Container [node] waiting [ContainerCreating] No message
+	Pod [Pending][ContainersNotReady] containers with unready status: [node jnlp]
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] script
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
+Still waiting to schedule task
+[Pipeline] isUnix
++ docker inspect -f . zricethezav/gitleaks:latest
+‘taskflow-pipeline-62-cvtb6-7ggrh-qsrlv’ is offline
+[Pipeline] withEnv
+Still waiting to schedule task
+[Pipeline] {
+.
+‘taskflow-pipeline-62-dv8nv-zfmv9-hkz4z’ is offline
+[Pipeline] sh
+[Pipeline] }
++ docker inspect -f . node:20-alpine
+.
+[Pipeline] // withEnv
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+$ docker run -t -d -u 1000:1000 --entrypoint= -u 0:0 -w /home/jenkins/agent/workspace/taskflow-pipeline --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** zricethezav/gitleaks:latest cat
+Still waiting to schedule task
+Waiting for next available executor
+$ docker top d57650ea293dc5bb6a5a0424ae293cc492c91ee243e2da8018c55848bd143528 -eo pid,comm
+[Pipeline] {
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+Agent taskflow-pipeline-62-dv8nv-zfmv9-hkz4z is provisioned from template taskflow-pipeline_62-dv8nv-zfmv9
+---
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  annotations:
+    kubernetes.jenkins.io/last-refresh: "1790808301776"
+    buildUrl: "http://172.17.0.1:8080/job/taskflow-pipeline/62/"
+    runUrl: "job/taskflow-pipeline/62/"
+  labels:
+    jenkins: "slave"
+    jenkins/label-digest: "9b4098aace71801680cbb6054e5b6060199268e8"
+    jenkins/label: "taskflow-pipeline_62-dv8nv"
+    kubernetes.jenkins.io/controller: "http___172_17_0_1_8080x"
+  name: "taskflow-pipeline-62-dv8nv-zfmv9-hkz4z"
+  namespace: "default"
+spec:
+  containers:
+  - command:
+    - "cat"
+    image: "node:20-alpine"
+    name: "node"
+    tty: true
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  - env:
+    - name: "JENKINS_SECRET"
+      value: "********"
+    - name: "REMOTING_OPTS"
+      value: "-noReconnectAfter 1d"
+    - name: "JENKINS_AGENT_NAME"
+      value: "taskflow-pipeline-62-dv8nv-zfmv9-hkz4z"
+    - name: "JENKINS_NAME"
+      value: "taskflow-pipeline-62-dv8nv-zfmv9-hkz4z"
+    - name: "JENKINS_AGENT_WORKDIR"
+      value: "/home/jenkins/agent"
+    - name: "JENKINS_URL"
+      value: "http://172.17.0.1:8080/"
+    image: "jenkins/inbound-agent:3391.va_37fa_a_305d6d-1-jdk25"
+    name: "jnlp"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  nodeSelector:
+    kubernetes.io/os: "linux"
+  restartPolicy: "Never"
+  volumes:
+  - emptyDir:
+      medium: ""
+    name: "workspace-volume"
+
+Agent taskflow-pipeline-62-cvtb6-7ggrh-qsrlv is provisioned from template taskflow-pipeline_62-cvtb6-7ggrh
+---
+apiVersion: "v1"
+kind: "Pod"
+metadata:
+  annotations:
+    kubernetes.jenkins.io/last-refresh: "1790808299371"
+    buildUrl: "http://172.17.0.1:8080/job/taskflow-pipeline/62/"
+    runUrl: "job/taskflow-pipeline/62/"
+  labels:
+    jenkins: "slave"
+    jenkins/label-digest: "e91af891d422d7a22f13bd4d84dedb0b2cd368ee"
+    jenkins/label: "taskflow-pipeline_62-cvtb6"
+    kubernetes.jenkins.io/controller: "http___172_17_0_1_8080x"
+  name: "taskflow-pipeline-62-cvtb6-7ggrh-qsrlv"
+  namespace: "default"
+spec:
+  containers:
+  - command:
+    - "cat"
+    image: "node:20-alpine"
+    name: "node"
+    tty: true
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  - env:
+    - name: "JENKINS_SECRET"
+      value: "********"
+    - name: "REMOTING_OPTS"
+      value: "-noReconnectAfter 1d"
+    - name: "JENKINS_AGENT_NAME"
+      value: "taskflow-pipeline-62-cvtb6-7ggrh-qsrlv"
+    - name: "JENKINS_NAME"
+      value: "taskflow-pipeline-62-cvtb6-7ggrh-qsrlv"
+    - name: "JENKINS_AGENT_WORKDIR"
+      value: "/home/jenkins/agent"
+    - name: "JENKINS_URL"
+      value: "http://172.17.0.1:8080/"
+    image: "jenkins/inbound-agent:3391.va_37fa_a_305d6d-1-jdk25"
+    name: "jnlp"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+    volumeMounts:
+    - mountPath: "/home/jenkins/agent"
+      name: "workspace-volume"
+      readOnly: false
+  nodeSelector:
+    kubernetes.io/os: "linux"
+  restartPolicy: "Never"
+  volumes:
+  - emptyDir:
+      medium: ""
+    name: "workspace-volume"
+
+Running on taskflow-pipeline-62-dv8nv-zfmv9-hkz4z in /home/jenkins/agent/workspace/taskflow-pipeline
+Running on taskflow-pipeline-62-cvtb6-7ggrh-qsrlv in /home/jenkins/agent/workspace/taskflow-pipeline
+$ docker run -t -d -u 1000:1000 -u root -w /home/jenkins/agent/workspace/taskflow-pipeline@2 --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** node:20-alpine cat
+$ docker top cc613ec50c2ba450769a983a93c5b3194bf806ef8851f1bf876ab4e40da1fecf -eo pid,comm
+[Pipeline] {
+[Pipeline] sh
++ gitleaks detect --source . --no-git --report-format json --report-path gitleaks-report.json -v
+[Pipeline] {
+[Pipeline] {
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
+No credentials specified
+Cloning the remote Git repository
+[90m10:45PM[0m [32mINF[0m [1mscanned ~2379439 bytes (2.38 MB) in 2.46s[0m
+[90m10:45PM[0m [32mINF[0m [1mno leaks found[0m
++ stat -c '%u:%g' .
++ chown 1000:1000 gitleaks-report.json
+No credentials specified
+Cloning the remote Git repository
++ apk add --no-cache jq
+[Pipeline] }
+$ docker stop --time=1 d57650ea293dc5bb6a5a0424ae293cc492c91ee243e2da8018c55848bd143528
+Cloning repository https://github.com/Nekokun2004/jenkins-lab.git
+ > git init /home/jenkins/agent/workspace/taskflow-pipeline # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Cloning repository https://github.com/Nekokun2004/jenkins-lab.git
+ > git init /home/jenkins/agent/workspace/taskflow-pipeline # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+(1/2) Installing oniguruma (6.9.10-r0)
+(2/2) Installing jq (1.8.2-r0)
+Executing busybox-1.37.0-r30.trigger
+OK: 11.7 MiB in 20 packages
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+ > git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+ > git config --add remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # timeout=10
+Avoid second fetch
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+$ docker rm -f --volumes d57650ea293dc5bb6a5a0424ae293cc492c91ee243e2da8018c55848bd143528
+Avoid second fetch
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] sh
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
++ npm audit '--audit-level=high' --json
+[Pipeline] // script
+Post stage
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] container
+[Pipeline] {
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] container
+[Pipeline] {
+[Pipeline] sh
+[Pipeline] }
++ npm ci
+[Pipeline] sh
+[Pipeline] // withEnv
++ npm ci
+[Pipeline] }
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] {
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ docker inspect -f . node:20-alpine
+.
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+$ docker run -t -d -u 1000:1000 -w /home/jenkins/agent/workspace/taskflow-pipeline --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** node:20-alpine cat
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z is back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv is back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z is back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv is back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z is back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-cvtb6-7ggrh-qsrlv is back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z seems to be removed or offline (java.lang.InterruptedException); will wait for 5 min 0 sec for it to come back online
+taskflow-pipeline-62-dv8nv-zfmv9-hkz4z is back online
+ERROR: Timeout after 180 seconds
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+$ docker top c1d5365b62941ef0ea77c3b0e2f9662e0a50cdb2ece75d9fc50d5f394d6b2b4b -eo pid,comm
+[Pipeline] {
+[Pipeline] sh
++ stat -c '%u:%g' .
++ chown 1000:1000 audit.json
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+[Pipeline] sh
++ jq .metadata.vulnerabilities.critical audit.json
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+[Pipeline] echo
+SCA passed with 0 critical vulnerabilities (warnings allowed)
+[Pipeline] }
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+[Pipeline] // script
+Post stage
+[Pipeline] sh
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
++ npm ci
+
+added 452 packages, and audited 453 packages in 5m
+
+72 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+added 452 packages, and audited 453 packages in 5m
+
+72 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] stash
+[Pipeline] sh
+Stashed 1 file(s)
+[Pipeline] sh
++ npm test -- --coverage '--reporters=default' '--reporters=jest-junit'
++ npm run lint
+[Pipeline] }
+$ docker stop --time=1 cc613ec50c2ba450769a983a93c5b3194bf806ef8851f1bf876ab4e40da1fecf
+
+> taskflow-api@1.0.0 lint
+> eslint src
+
+$ docker rm -f --volumes cc613ec50c2ba450769a983a93c5b3194bf806ef8851f1bf876ab4e40da1fecf
+
+> taskflow-api@1.0.0 test
+> jest --coverage --reporters=default --reporters=jest-junit
+
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] }
+[Pipeline] // container
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+
+added 452 packages, and audited 453 packages in 29s
+
+72 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] sh
++ npx eslint --plugin security -f @microsoft/eslint-formatter-sarif -o eslint-report.sarif src/
+[Pipeline] // podTemplate
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+Post stage
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+$ docker stop --time=1 c1d5365b62941ef0ea77c3b0e2f9662e0a50cdb2ece75d9fc50d5f394d6b2b4b
+$ docker rm -f --volumes c1d5365b62941ef0ea77c3b0e2f9662e0a50cdb2ece75d9fc50d5f394d6b2b4b
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Semgrep)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] script
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ docker inspect -f . semgrep/semgrep:latest
+.
+[Pipeline] }
+[Pipeline] // withEnv
+PASS tests/health.test.js (9.75 s)
+PASS tests/tasks.test.js (9.983 s)
+--------------------------|---------|----------|---------|---------|-------------------
+File                      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------------|---------|----------|---------|---------|-------------------
+All files                 |    87.5 |       80 |   92.85 |   88.23 |                   
+ src                      |   81.81 |      100 |      50 |   81.81 |                   
+  app.js                  |   81.81 |      100 |      50 |   81.81 | 19-20             
+ src/repositories         |    92.3 |    66.66 |     100 |   95.45 |                   
+  index.js                |      80 |       50 |     100 |      80 | 7                 
+  memoryTaskRepository.js |   95.23 |       75 |     100 |     100 | 28                
+ src/routes               |   85.71 |    88.88 |     100 |   85.71 |                   
+  tasks.js                |   85.71 |    88.88 |     100 |   85.71 | 12,26,39,48,52    
+--------------------------|---------|----------|---------|---------|-------------------
+
+Test Suites: 2 passed, 2 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        13.567 s
+Ran all test suites.
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+$ docker run -t -d -u 1000:1000 -u 0:0 -w /home/jenkins/agent/workspace/taskflow-pipeline --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** semgrep/semgrep:latest cat
+$ docker top 0be4989258ef96f34e8d0a279e4485f413eb37f8fa542dba5c7d5f21c745de43 -eo pid,comm
+[Pipeline] {
+[Pipeline] stash
+[Pipeline] sh
++ semgrep '--config=p/owasp-top-ten' '--config=p/nodejs' --sarif -o semgrep-report.sarif src/
+Stashed 18 file(s)
+[Pipeline] }
+[Pipeline] // container
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // podTemplate
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 6 files tracked by git with 561 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin      Rules                                                                
+ ─────────────────────────────        ───────────────────                                                               
+  js               66       6          Community     561                                                                
+  <multilang>       5       6                                                                                           
+                                                                                                                        
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+✅ Scan completed successfully.
+ • Findings: 0 (0 blocking)
+ • Rules run: 71
+ • Targets scanned: 6
+ • Parsed lines: ~100.0%
+ • Scan was limited to files tracked by git
+ • For a detailed list of skipped files and lines, run semgrep with the --verbose flag
+Ran 71 rules on 6 files: 0 findings.
+(need more rules? `semgrep login` for additional free Semgrep Registry rules)
+
+If Semgrep missed a finding, please send us feedback to let us know!
+See https://semgrep.dev/docs/reporting-false-negatives/
++ stat -c '%u:%g' .
++ chown 1000:1000 semgrep-report.sarif
+[Pipeline] }
+$ docker stop --time=1 0be4989258ef96f34e8d0a279e4485f413eb37f8fa542dba5c7d5f21c745de43
+$ docker rm -f --volumes 0be4989258ef96f34e8d0a279e4485f413eb37f8fa542dba5c7d5f21c745de43
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] // script
+Post stage
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // parallel
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Generate SBOM)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ rm -f cosign.key cosign.pub taskflow-api.cdx.json taskflow-api.cdx.json.sig
+[Pipeline] sh
++ docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline anchore/syft:latest dir:. -o cyclonedx-json=taskflow-api.cdx.json
+[0000]  WARN no explicit name and version provided for directory source, deriving artifact ID from the given path (which is not ideal)
+[Pipeline] sh
++ docker run --rm -u 0:0 -e COSIGN_PASSWORD= --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline ghcr.io/sigstore/cosign/cosign:v2.4.1 generate-key-pair
+Private key written to cosign.key
+Public key written to cosign.pub
++ docker run --rm -u 0:0 -e COSIGN_PASSWORD= --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline ghcr.io/sigstore/cosign/cosign:v2.4.1 sign-blob --key cosign.key --tlog-upload=false --yes taskflow-api.cdx.json
+Using payload from: taskflow-api.cdx.json
+[Pipeline] sh
++ id -u
++ TARGET_UID=1000
++ id -g
++ TARGET_GID=1000
++ docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline node:20-alpine chown -R 1000:1000 .
+Post stage
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] stash
+Stashed 1 file(s)
+[Pipeline] sh
++ rm -f cosign.key
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Policy Gate)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] script
+[Pipeline] {
+[Pipeline] unstash
+[Pipeline] sh
++ docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline openpolicyagent/opa:latest eval --input audit.json --data policy/security.rego data.security.deny -f raw
+[Pipeline] echo
+OPA policy evaluation result: []
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (SonarQube Analysis)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] unstash
+[Pipeline] script
+[Pipeline] {
+[Pipeline] tool
+[Pipeline] withSonarQubeEnv
+Injecting SonarQube environment variables using the configuration: SonarQube
+[Pipeline] {
+[Pipeline] sh
++ /home/jenkins/agent/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner-tool/bin/sonar-scanner -Dsonar.projectKey=taskflow-api -Dsonar.sources=src -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+22:53:10.169 INFO  Scanner configuration file: /home/jenkins/agent/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner-tool/conf/sonar-scanner.properties
+22:53:10.202 INFO  Project root configuration file: NONE
+22:53:10.219 INFO  SonarScanner CLI 8.1.0.6389
+22:53:10.223 INFO  Linux 7.2.6+deb14-amd64 amd64
+22:53:13.361 INFO  Communicating with SonarQube Server 9.9.8.100196
+22:53:14.097 INFO  Load global settings
+22:53:14.163 INFO  Load global settings (done) | time=67ms
+22:53:14.164 INFO  Server id: 147B411E-AaDs5UjYROOwgkudIPOV
+22:53:14.168 INFO  User cache: /home/jenkins/.sonar/cache
+22:53:14.172 INFO  Load/download plugins
+22:53:14.172 INFO  Load plugins index
+22:53:14.241 INFO  Load plugins index (done) | time=69ms
+22:53:14.754 INFO  Load/download plugins (done) | time=582ms
+22:53:15.688 INFO  Process project properties
+22:53:15.694 INFO  Process project properties (done) | time=6ms
+22:53:15.697 INFO  Execute project builders
+22:53:15.698 INFO  Execute project builders (done) | time=1ms
+22:53:15.702 INFO  Project key: taskflow-api
+22:53:15.702 INFO  Base dir: /home/jenkins/agent/workspace/taskflow-pipeline
+22:53:15.702 INFO  Working dir: /home/jenkins/agent/workspace/taskflow-pipeline/.scannerwork
+22:53:15.708 INFO  Load project settings for component key: 'taskflow-api'
+22:53:15.725 INFO  Load project settings for component key: 'taskflow-api' (done) | time=17ms
+22:53:15.916 INFO  Auto-configuring with CI 'Jenkins'
+22:53:15.918 INFO  Load quality profiles
+22:53:16.184 INFO  Load quality profiles (done) | time=266ms
+22:53:16.193 INFO  Load active rules
+22:53:17.736 INFO  Load active rules (done) | time=1543ms
+22:53:17.739 INFO  Load analysis cache
+22:53:17.752 INFO  Load analysis cache (5.2 kB) | time=13ms
+22:53:17.796 INFO  Load project repositories
+22:53:17.808 INFO  Load project repositories (done) | time=12ms
+22:53:17.876 INFO  Indexing files...
+22:53:17.876 INFO  Project configuration:
+22:53:18.038 INFO  6 files indexed
+22:53:18.038 INFO  0 files ignored because of scm ignore settings
+22:53:18.039 INFO  Quality profile for js: Sonar way
+22:53:18.039 INFO  ------------- Run sensors on module taskflow-api
+22:53:18.741 INFO  Load metrics repository
+22:53:18.762 INFO  Load metrics repository (done) | time=21ms
+22:53:20.661 INFO  Sensor JaCoCo XML Report Importer [jacoco]
+22:53:20.661 INFO  'sonar.coverage.jacoco.xmlReportPaths' is not defined. Using default locations: target/site/jacoco/jacoco.xml,target/site/jacoco-it/jacoco.xml,build/reports/jacoco/test/jacocoTestReport.xml
+22:53:20.662 INFO  No report imported, no coverage information will be imported by JaCoCo XML Report Importer
+22:53:20.662 INFO  Sensor JaCoCo XML Report Importer [jacoco] (done) | time=2ms
+22:53:20.662 INFO  Sensor JavaScript analysis [javascript]
+22:53:24.235 WARN  Node.js version 20 is not recommended, you might experience issues. Please use a recommended version of Node.js [16, 18]
+22:53:24.244 INFO  6 source files to be analyzed
+22:53:26.429 INFO  6/6 source files have been analyzed
+22:53:26.429 INFO  Hit the cache for 0 out of 6
+22:53:26.430 INFO  Miss the cache for 6 out of 6: ANALYSIS_MODE_INELIGIBLE [6/6]
+22:53:26.430 INFO  Sensor JavaScript analysis [javascript] (done) | time=5768ms
+22:53:26.430 INFO  Sensor TypeScript analysis [javascript]
+22:53:26.430 INFO  No input files found for analysis
+22:53:26.430 INFO  Hit the cache for 0 out of 0
+22:53:26.430 INFO  Miss the cache for 0 out of 0
+22:53:26.431 INFO  Sensor TypeScript analysis [javascript] (done) | time=1ms
+22:53:26.431 INFO  Sensor CSS Rules [javascript]
+22:53:26.431 INFO  No CSS, PHP, HTML or VueJS files are found in the project. CSS analysis is skipped.
+22:53:26.431 INFO  Sensor CSS Rules [javascript] (done) | time=0ms
+22:53:26.431 INFO  Sensor JavaScript/TypeScript Coverage [javascript]
+22:53:26.431 INFO  Analysing [/home/jenkins/agent/workspace/taskflow-pipeline/coverage/lcov.info]
+22:53:26.440 INFO  Sensor JavaScript/TypeScript Coverage [javascript] (done) | time=9ms
+22:53:26.440 INFO  Sensor C# Project Type Information [csharp]
+22:53:26.440 INFO  Sensor C# Project Type Information [csharp] (done) | time=0ms
+22:53:26.440 INFO  Sensor C# Analysis Log [csharp]
+22:53:26.449 INFO  Sensor C# Analysis Log [csharp] (done) | time=9ms
+22:53:26.449 INFO  Sensor C# Properties [csharp]
+22:53:26.449 INFO  Sensor C# Properties [csharp] (done) | time=0ms
+22:53:26.449 INFO  Sensor HTML [web]
+22:53:26.451 INFO  Sensor HTML [web] (done) | time=2ms
+22:53:26.451 INFO  Sensor TextAndSecretsSensor [text]
+22:53:26.456 INFO  6 source files to be analyzed
+22:53:26.468 INFO  6/6 source files have been analyzed
+22:53:26.468 INFO  Sensor TextAndSecretsSensor [text] (done) | time=17ms
+22:53:26.468 INFO  Sensor VB.NET Project Type Information [vbnet]
+22:53:26.469 INFO  Sensor VB.NET Project Type Information [vbnet] (done) | time=1ms
+22:53:26.469 INFO  Sensor VB.NET Analysis Log [vbnet]
+22:53:26.480 INFO  Sensor VB.NET Analysis Log [vbnet] (done) | time=11ms
+22:53:26.480 INFO  Sensor VB.NET Properties [vbnet]
+22:53:26.480 INFO  Sensor VB.NET Properties [vbnet] (done) | time=0ms
+22:53:26.480 INFO  Sensor IaC Docker Sensor [iac]
+22:53:26.482 INFO  0 source files to be analyzed
+22:53:26.524 INFO  0/0 source files have been analyzed
+22:53:26.524 INFO  Sensor IaC Docker Sensor [iac] (done) | time=44ms
+22:53:26.527 INFO  ------------- Run sensors on project
+22:53:26.588 INFO  Sensor Analysis Warnings import [csharp]
+22:53:26.588 INFO  Sensor Analysis Warnings import [csharp] (done) | time=1ms
+22:53:26.588 INFO  Sensor Zero Coverage Sensor
+22:53:26.590 INFO  Sensor Zero Coverage Sensor (done) | time=2ms
+22:53:26.598 INFO  CPD Executor 2 files had no CPD blocks
+22:53:26.598 INFO  CPD Executor Calculating CPD for 4 files
+22:53:26.603 INFO  CPD Executor CPD calculation finished (done) | time=4ms
+22:53:26.644 INFO  Analysis report generated in 39ms, dir size=138.5 kB
+22:53:26.659 INFO  Analysis report compressed in 15ms, zip size=31.9 kB
+22:53:26.743 INFO  Analysis report uploaded in 83ms
+22:53:26.744 INFO  ANALYSIS SUCCESSFUL, you can find the results at: http://172.17.0.1:9000/dashboard?id=taskflow-api
+22:53:26.744 INFO  Note that you will be able to access the updated dashboard once the server has processed the submitted analysis report
+22:53:26.744 INFO  More about the report processing at http://172.17.0.1:9000/api/ce/task?id=AaD0hdVPuO10f9CQxuqr
+22:53:27.196 INFO  Analysis total time: 12.267 s
+22:53:27.197 INFO  EXECUTION SUCCESS
+22:53:27.198 INFO  Total time: 17.083s
+[Pipeline] }
+[Pipeline] // withSonarQubeEnv
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Quality Gate)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] timeout
+Timeout set to expire in 5 min 0 sec
+[Pipeline] {
+[Pipeline] waitForQualityGate
+Checking status of SonarQube task 'AaD0hdVPuO10f9CQxuqr' on server 'SonarQube'
+SonarQube task 'AaD0hdVPuO10f9CQxuqr' status is 'SUCCESS'
+SonarQube task 'AaD0hdVPuO10f9CQxuqr' completed. Quality gate is 'OK'
+[Pipeline] }
+[Pipeline] // timeout
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (E2E)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] withEnv
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] {
+[Pipeline] sh
++ docker compose up -d --build
+time="2026-09-30T22:53:39Z" level=warning msg="buildx Docker CLI plugin not found: falling back to the classic builder. BuildKit-only build features (multi-arch, secrets, ssh, additional contexts, ...) will not be available"
+ Image taskflow-pipeline-db Building 
+ Image taskflow-pipeline-db Building 
+Sending build context to Docker daemon     429B
+Step 1/3 : FROM postgres:16-alpine
+ ---> 81bd698b4594
+Step 2/3 : COPY schema.sql /docker-entrypoint-initdb.d/schema.sql
+ ---> Using cache
+ ---> d675ebbba3a7
+Step 3/3 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 0ebbf5ebdd54
+Successfully built 0ebbf5ebdd54
+Successfully tagged taskflow-pipeline-db:latest
+ Image taskflow-pipeline-db Built 
+ Image taskflow-pipeline-db Built 
+ Image taskflow-pipeline-api Building 
+ Image taskflow-pipeline-api Building 
+Sending build context to Docker daemon  414.3kB
+Step 1/16 : FROM node:20-alpine AS build
+ ---> 11cedc39e663
+Step 2/16 : WORKDIR /app
+ ---> Using cache
+ ---> 4141bbd13dff
+Step 3/16 : COPY package*.json ./
+ ---> Using cache
+ ---> acaa0eab294f
+Step 4/16 : RUN npm ci
+ ---> Using cache
+ ---> 70d2f78a016a
+Step 5/16 : COPY src ./src
+ ---> Using cache
+ ---> 245d29d52dd9
+Step 6/16 : RUN npm prune --omit=dev     && find src node_modules -type f \( -name '*.map' -o -name '*.test.js' -o -name '*.spec.js' \) -delete     && npm cache clean --force
+ ---> Using cache
+ ---> b74154f2e7f1
+Step 7/16 : FROM node:20-alpine
+ ---> 11cedc39e663
+Step 8/16 : WORKDIR /app
+ ---> Using cache
+ ---> 4141bbd13dff
+Step 9/16 : ENV NODE_ENV=production     PORT=8080
+ ---> Using cache
+ ---> cac2b9f576ba
+Step 10/16 : COPY --from=build --chown=node:node /app/node_modules ./node_modules
+ ---> Using cache
+ ---> d05b7964bd1e
+Step 11/16 : COPY --from=build --chown=node:node /app/src ./src
+ ---> Using cache
+ ---> b60ba20ed2c6
+Step 12/16 : RUN apk upgrade --no-cache libssl3 libcrypto3     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack               /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+ ---> Using cache
+ ---> b6a1371f8a0b
+Step 13/16 : USER node
+ ---> Using cache
+ ---> 62469a12687c
+Step 14/16 : EXPOSE 8080
+ ---> Using cache
+ ---> 9cecae8608f5
+Step 15/16 : CMD ["node", "src/index.js"]
+ ---> Using cache
+ ---> 88b9824e33a5
+Step 16/16 : LABEL com.docker.compose.image.builder=classic
+ ---> Using cache
+ ---> 032418b04431
+Successfully built 032418b04431
+Successfully tagged taskflow-pipeline-api:latest
+ Image taskflow-pipeline-api Built 
+ Image taskflow-pipeline-api Built 
+ Network taskflow-pipeline_default Creating 
+ Network taskflow-pipeline_default Creating 
+ Network taskflow-pipeline_default Created 
+ Network taskflow-pipeline_default Created 
+ Container taskflow-pipeline-db-1 Creating 
+ Container taskflow-pipeline-db-1 Created 
+ Container taskflow-pipeline-api-1 Creating 
+ Container taskflow-pipeline-api-1 Created 
+ Container taskflow-pipeline-db-1 Starting 
+ Container taskflow-pipeline-db-1 Started 
+ Container taskflow-pipeline-db-1 Waiting 
+ Container taskflow-pipeline-db-1 Healthy 
+ Container taskflow-pipeline-api-1 Starting 
+ Container taskflow-pipeline-api-1 Started 
+[Pipeline] script
+[Pipeline] {
+[Pipeline] isUnix
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
++ docker inspect -f . mcr.microsoft.com/playwright:v1.63.0-noble
+.
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] withDockerContainer
+linux-build seems to be running inside container bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7
+$ docker run -t -d -u 1000:1000 --network host -w /home/jenkins/agent/workspace/taskflow-pipeline --volumes-from bb124949d3a843b942a215968fe8be4f415ff0daeea444b56e043aae924d4fe7 -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** -e ******** mcr.microsoft.com/playwright:v1.63.0-noble cat
+$ docker top d561d886904cdb880a02a29bc000847277ff7ced4446636996eb41e44f4f08c1 -eo pid,comm
+[Pipeline] {
+[Pipeline] sh
++ npm ci
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+added 452 packages, and audited 453 packages in 4s
+
+72 packages are looking for funding
+  run `npm fund` for details
+
+2 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+[Pipeline] sh
++ npm run test:e2e
+
+> taskflow-api@1.0.0 test:e2e
+> playwright test
+
+
+Running 3 tests using 1 worker
+···
+  3 passed (907ms)
+[Pipeline] }
+$ docker stop --time=1 d561d886904cdb880a02a29bc000847277ff7ced4446636996eb41e44f4f08c1
+$ docker rm -f --volumes d561d886904cdb880a02a29bc000847277ff7ced4446636996eb41e44f4f08c1
+[Pipeline] // withDockerContainer
+[Pipeline] }
+[Pipeline] // script
+Post stage
+[Pipeline] sh
++ docker compose down -v
+ Container taskflow-pipeline-api-1 Stopping 
+ Container taskflow-pipeline-api-1 Stopped 
+ Container taskflow-pipeline-api-1 Removing 
+ Container taskflow-pipeline-api-1 Removed 
+ Container taskflow-pipeline-db-1 Stopping 
+ Container taskflow-pipeline-db-1 Stopped 
+ Container taskflow-pipeline-db-1 Removing 
+ Container taskflow-pipeline-db-1 Removed 
+ Network taskflow-pipeline_default Removing 
+ Network taskflow-pipeline_default Removed 
+[Pipeline] junit
+Recording test results
+[Checks API] No suitable checks publisher found.
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Image)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] script
+[Pipeline] {
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] sh
++ set -eu
++ echo Building immutable image: localhost:5000/taskflow-api:bb54b7f
+Building immutable image: localhost:5000/taskflow-api:bb54b7f
++ docker build -t localhost:5000/taskflow-api:bb54b7f .
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  2.204MB
+Step 1/15 : FROM node:20-alpine AS build
+ ---> 11cedc39e663
+Step 2/15 : WORKDIR /app
+ ---> Using cache
+ ---> 4141bbd13dff
+Step 3/15 : COPY package*.json ./
+ ---> Using cache
+ ---> acaa0eab294f
+Step 4/15 : RUN npm ci
+ ---> Using cache
+ ---> 70d2f78a016a
+Step 5/15 : COPY src ./src
+ ---> Using cache
+ ---> 245d29d52dd9
+Step 6/15 : RUN npm prune --omit=dev     && find src node_modules -type f \( -name '*.map' -o -name '*.test.js' -o -name '*.spec.js' \) -delete     && npm cache clean --force
+ ---> Using cache
+ ---> b74154f2e7f1
+Step 7/15 : FROM node:20-alpine
+ ---> 11cedc39e663
+Step 8/15 : WORKDIR /app
+ ---> Using cache
+ ---> 4141bbd13dff
+Step 9/15 : ENV NODE_ENV=production     PORT=8080
+ ---> Using cache
+ ---> cac2b9f576ba
+Step 10/15 : COPY --from=build --chown=node:node /app/node_modules ./node_modules
+ ---> Using cache
+ ---> d05b7964bd1e
+Step 11/15 : COPY --from=build --chown=node:node /app/src ./src
+ ---> Using cache
+ ---> b60ba20ed2c6
+Step 12/15 : RUN apk upgrade --no-cache libssl3 libcrypto3     && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack               /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+ ---> Using cache
+ ---> b6a1371f8a0b
+Step 13/15 : USER node
+ ---> Using cache
+ ---> 62469a12687c
+Step 14/15 : EXPOSE 8080
+ ---> Using cache
+ ---> 9cecae8608f5
+Step 15/15 : CMD ["node", "src/index.js"]
+ ---> Using cache
+ ---> 88b9824e33a5
+Successfully built 88b9824e33a5
+Successfully tagged localhost:5000/taskflow-api:bb54b7f
++ docker image inspect localhost:5000/taskflow-api:bb54b7f --format Local image id: {{.Id}}
+Local image id: sha256:88b9824e33a5476c852b33a3a89507da5e778161bd07b31551fb7e88f37e25cb
++ docker push localhost:5000/taskflow-api:bb54b7f
+The push refers to repository [localhost:5000/taskflow-api]
+c313c08db469: Preparing
+8a66d4c24c16: Preparing
+9b22d38c373a: Preparing
+b123827d4e0c: Preparing
+afa543f85b46: Preparing
+e10358715ead: Preparing
+4983b93ee796: Preparing
+29df493baa13: Preparing
+e10358715ead: Waiting
+4983b93ee796: Waiting
+29df493baa13: Waiting
+8a66d4c24c16: Layer already exists
+c313c08db469: Layer already exists
+b123827d4e0c: Layer already exists
+e10358715ead: Layer already exists
+9b22d38c373a: Layer already exists
+afa543f85b46: Layer already exists
+4983b93ee796: Layer already exists
+29df493baa13: Layer already exists
+bb54b7f: digest: sha256:b29c4fd73b5da10a815f8c904bcc5032cea303e0ab239dfbcced60726ea9a813 size: 1993
++ curl -fsS http://localhost:5000/v2/taskflow-api/tags/list
+{"name":"taskflow-api","tags":["e29e930","5a4160e","8cebc6e","0bb4bf6","04f301b","bb54b7f","4f38717","b06595d","785dcee","ada34be","3ca7466","2af49df"]}
++ echo
+
++ curl -fsS http://localhost:5000/v2/taskflow-api/tags/list
++ grep -q bb54b7f
++ echo Verified in registry: localhost:5000/taskflow-api:bb54b7f
+Verified in registry: localhost:5000/taskflow-api:bb54b7f
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Container Scan)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] withEnv
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] {
+[Pipeline] sh
++ rm -f trivy-report.sarif
+[Pipeline] sh
++ docker run --rm -u 0:0 -v trivy-cache:/root/.cache --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline aquasec/trivy:latest image --format sarif -o trivy-report.sarif --severity HIGH,CRITICAL --exit-code 0 localhost:5000/taskflow-api:bb54b7f
+2026-09-30T22:54:59Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-09-30T22:54:59Z	INFO	[secret] Secret scanning is enabled
+2026-09-30T22:54:59Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2026-09-30T22:54:59Z	INFO	[secret] Please see https://trivy.dev/docs/v0.74/guide/scanner/secret#recommendation for faster secret detection
+2026-09-30T22:55:04Z	INFO	Detected OS	family="alpine" version="3.23.4"
+2026-09-30T22:55:04Z	INFO	[alpine] Detecting vulnerabilities...	os_version="3.23" repository="3.23" pkg_num=18
+2026-09-30T22:55:05Z	INFO	Number of language-specific files	num=1
+2026-09-30T22:55:05Z	INFO	[node-pkg] Detecting vulnerabilities...
+[Pipeline] sh
++ id -u
++ id -g
++ docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w /home/jenkins/agent/workspace/taskflow-pipeline node:20-alpine chown 1000:1000 trivy-report.sarif
++ test -s trivy-report.sarif
+[Pipeline] sh
++ docker run --rm -u 0:0 -v trivy-cache:/root/.cache --volumes-from jenkins-agent-linux-build aquasec/trivy:latest image --quiet --severity HIGH,CRITICAL --exit-code 1 localhost:5000/taskflow-api:bb54b7f
+
+Report Summary
+
+┌───────────────────────────────────────────────────────────────────────┬──────────┬─────────────────┬─────────┐
+│                                Target                                 │   Type   │ Vulnerabilities │ Secrets │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ localhost:5000/taskflow-api:bb54b7f (alpine 3.23.4)                   │  alpine  │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/accepts/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/array-flatten/package.json                           │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/body-parser/node_modules/debug/package.json          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/body-parser/node_modules/ms/package.json             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/body-parser/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/bytes/package.json                                   │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/call-bind-apply-helpers/package.json                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/call-bound/package.json                              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/content-disposition/package.json                     │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/content-type/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/cookie-signature/package.json                        │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/cookie/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/depd/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/destroy/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/dotenv/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/dunder-proto/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/ee-first/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/encodeurl/package.json                               │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/es-define-property/package.json                      │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/es-errors/package.json                               │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/es-object-atoms/package.json                         │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/escape-html/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/etag/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/express/node_modules/debug/package.json              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/express/node_modules/ms/package.json                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/express/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/finalhandler/node_modules/debug/package.json         │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/finalhandler/node_modules/ms/package.json            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/finalhandler/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/forwarded/package.json                               │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/fresh/package.json                                   │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/function-bind/package.json                           │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/get-intrinsic/package.json                           │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/get-proto/package.json                               │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/gopd/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/has-symbols/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/hasown/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/http-errors/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/iconv-lite/package.json                              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/inherits/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/ipaddr.js/package.json                               │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/math-intrinsics/package.json                         │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/media-typer/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/merge-descriptors/package.json                       │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/methods/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/mime-db/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/mime-types/package.json                              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/mime/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/ms/package.json                                      │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/negotiator/package.json                              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/object-inspect/package.json                          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/on-finished/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/parseurl/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/path-to-regexp/package.json                          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-cloudflare/package.json                           │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-connection-string/package.json                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-int8/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-pool/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-protocol/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg-types/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pg/package.json                                      │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/pgpass/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-array/package.json                          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-bytea/package.json                          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-date/package.json                           │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/postgres-interval/package.json                       │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/proxy-addr/package.json                              │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/qs/package.json                                      │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/range-parser/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/raw-body/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/safe-buffer/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/safer-buffer/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/send/node_modules/debug/node_modules/ms/package.json │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/send/node_modules/debug/package.json                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/send/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/serve-static/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/setprototypeof/package.json                          │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/side-channel-list/package.json                       │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/side-channel-map/package.json                        │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/side-channel-weakmap/package.json                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/side-channel/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/split2/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/statuses/package.json                                │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/toidentifier/package.json                            │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/type-is/package.json                                 │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/unpipe/package.json                                  │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/utils-merge/package.json                             │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/vary/package.json                                    │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ app/node_modules/xtend/package.json                                   │ node-pkg │        0        │    -    │
+├───────────────────────────────────────────────────────────────────────┼──────────┼─────────────────┼─────────┤
+│ opt/yarn-v1.22.22/package.json                                        │ node-pkg │        0        │    -    │
+└───────────────────────────────────────────────────────────────────────┴──────────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+Post stage
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Blue/Green Deploy)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] sh
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
++ rm -f .lab07-previous-color
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ kubectl get svc taskflow -o jsonpath={.spec.selector.color}
+[Pipeline] writeFile
+[Pipeline] echo
+Current active color: green
+[Pipeline] echo
+Candidate color: blue
+[Pipeline] echo
+Deploying image: localhost:5000/taskflow-api:bb54b7f (fault mode: none)
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] sh
++ set -eu
++ echo ===== Service/taskflow BEFORE =====
+===== Service/taskflow BEFORE =====
++ kubectl get svc taskflow -o yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"taskflow","namespace":"default"},"spec":{"ports":[{"port":8080,"targetPort":8080}],"selector":{"app":"taskflow","color":"blue"}}}
+  creationTimestamp: "2026-09-30T07:28:33Z"
+  name: taskflow
+  namespace: default
+  resourceVersion: "71212"
+  uid: 52853c0e-d071-4773-b9b4-dad44339bc0c
+spec:
+  clusterIP: 10.96.15.94
+  clusterIPs:
+  - 10.96.15.94
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: taskflow
+    color: green
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
++ kubectl set image deployment/taskflow-blue taskflow=localhost:5000/taskflow-api:bb54b7f
+deployment.apps/taskflow-blue image updated
++ kubectl rollout status deployment/taskflow-blue --timeout=90s
+Waiting for deployment spec update to be observed...
+Waiting for deployment "taskflow-blue" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "taskflow-blue" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "taskflow-blue" rollout to finish: 1 old replicas are pending termination...
+deployment "taskflow-blue" successfully rolled out
++ echo Rollout complete for blue
+Rollout complete for blue
++ smoke http://taskflow-blue:8080/health smoke-62
++ url=http://taskflow-blue:8080/health
++ pod=smoke-62
++ n=0
++ [ 0 -lt 3 ]
++ n=1
++ kubectl delete pod smoke-62 --ignore-not-found
++ kubectl run smoke-62 --rm -i --restart=Never --image=curlimages/curl:8.10.1 --command -- curl -fsS --max-time 5 http://taskflow-blue:8080/health
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
++ out={"status":"ok"}pod "smoke-62" deleted from default namespace
++ echo {"status":"ok"}pod "smoke-62" deleted from default namespace
++ grep -q "status":"ok"
++ echo Response from http://taskflow-blue:8080/health: {"status":"ok"}pod "smoke-62" deleted from default namespace
+Response from http://taskflow-blue:8080/health: {"status":"ok"}pod "smoke-62" deleted from default namespace
++ return 0
++ kubectl get svc taskflow -o jsonpath={.spec.selector.color}
++ echo Smoke test passed for blue (Service/taskflow still -> green)
+Smoke test passed for blue (Service/taskflow still -> green)
++ echo Switching traffic green -> blue
+Switching traffic green -> blue
++ printf {"spec":{"selector":{"app":"taskflow","color":"%s"}}} blue
++ kubectl patch svc taskflow --type merge -p {"spec":{"selector":{"app":"taskflow","color":"blue"}}}
+service/taskflow patched
++ kubectl get svc taskflow -o jsonpath={.spec.selector.color}
++ echo Active color is now blue
+Active color is now blue
++ smoke http://taskflow:8080/health verify-62
++ url=http://taskflow:8080/health
++ pod=verify-62
++ n=0
++ [ 0 -lt 3 ]
++ n=1
++ kubectl delete pod verify-62 --ignore-not-found
++ kubectl run verify-62 --rm -i --restart=Never --image=curlimages/curl:8.10.1 --command -- curl -fsS --max-time 5 http://taskflow:8080/health
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/verify-62, falling back to streaming logs: unable to upgrade connection: container verify-62 not found in pod verify-62_default
++ out={"status":"ok"}pod "verify-62" deleted from default namespace
++ echo {"status":"ok"}pod "verify-62" deleted from default namespace
++ grep -q "status":"ok"
++ echo Response from http://taskflow:8080/health: {"status":"ok"}pod "verify-62" deleted from default namespace
+Response from http://taskflow:8080/health: {"status":"ok"}pod "verify-62" deleted from default namespace
++ return 0
++ echo ===== Service/taskflow AFTER =====
+===== Service/taskflow AFTER =====
++ kubectl get svc taskflow -o yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"taskflow","namespace":"default"},"spec":{"ports":[{"port":8080,"targetPort":8080}],"selector":{"app":"taskflow","color":"blue"}}}
+  creationTimestamp: "2026-09-30T07:28:33Z"
+  name: taskflow
+  namespace: default
+  resourceVersion: "79626"
+  uid: 52853c0e-d071-4773-b9b4-dad44339bc0c
+spec:
+  clusterIP: 10.96.15.94
+  clusterIPs:
+  - 10.96.15.94
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: taskflow
+    color: blue
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
++ echo Blue/Green deploy SUCCESS: active color is blue
+Blue/Green deploy SUCCESS: active color is blue
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (IaC Lint & Validate)
+Stage "IaC Lint & Validate" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] parallel
+[Pipeline] { (Branch: Terraform Validate)
+[Pipeline] { (Branch: Ansible Lint)
+[Pipeline] stage
+[Pipeline] { (Terraform Validate)
+[Pipeline] stage
+[Pipeline] { (Ansible Lint)
+Stage "Terraform Validate" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+Stage "Ansible Lint" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] }
+[Pipeline] // parallel
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (IaC Security Scan)
+Stage "IaC Security Scan" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Terraform Plan)
+Stage "Terraform Plan" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Approval)
+Stage "Approval" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Terraform Apply)
+Stage "Terraform Apply" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Configure with Ansible)
+Stage "Configure with Ansible" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy — Staging)
+Stage "Deploy — Staging" skipped due to when conditional
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Pipeline Health Gate)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+No credentials specified
+Fetching changes from the remote Git repository
+Checking out Revision bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 (refs/remotes/origin/lab10)
+Commit message: "feat: Health Gate uses the rolling success rate of the last 20 builds"
+ > git rev-parse --resolve-git-dir /home/jenkins/agent/workspace/taskflow-pipeline/.git # timeout=10
+ > git config remote.origin.url https://github.com/Nekokun2004/jenkins-lab.git # timeout=10
+Fetching upstream changes from https://github.com/Nekokun2004/jenkins-lab.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+ > git fetch --tags --force --progress -- https://github.com/Nekokun2004/jenkins-lab.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/lab10^{commit} # timeout=10
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bb54b7f5bc5043f96bc3859da8330bf3cc14aa57 # timeout=10
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ python3 scripts/health_gate.py
+[Pipeline] echo
+Job: taskflow-pipeline  window: last 20 completed builds  threshold: 90%
+[Pipeline] echo
+Builds considered (newest first): FAILURE,FAILURE,SUCCESS,SUCCESS,FAILURE,SUCCESS,FAILURE,FAILURE,SUCCESS,SUCCESS,FAILURE,SUCCESS,FAILURE,FAILURE,FAILURE,FAILURE,FAILURE,FAILURE,FAILURE,FAILURE
+[Pipeline] echo
+HEALTH status=ok builds=20 of 20 success=6 total=20 rate=30.0
+[Pipeline] echo
+20 builds available out of 20
+[Pipeline] echo
+Rolling build success rate: 30.0%  (threshold 90%)
+[Pipeline] error
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy — Production)
+Stage "Deploy — Production" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] script
+[Pipeline] {
+[Pipeline] unstash
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] archiveArtifacts
+Archiving artifacts
+[Pipeline] junit
+Recording test results
+[Checks API] No suitable checks publisher found.
+[Pipeline] publishCoverage
+Publishing Coverage report....
+A total of 1 reports were found
+Report coverage diff: 0.0%. Add to CoverageResult.
+Group coverage diff: 0.0%. Add to CoverageResult.
+Package coverage diff: 0.0%. Add to CoverageResult.
+File coverage diff: 0.0%. Add to CoverageResult.
+Class coverage diff: 0.0%. Add to CoverageResult.
+Method coverage diff: 0.0%. Add to CoverageResult.
+Line coverage diff: 0.0%. Add to CoverageResult.
+Conditional coverage diff: 0.0%. Add to CoverageResult.
+[Coverage] Computing coverage delta report
+[Coverage] Reference build recorder is not configured
+[Coverage] -> No reference build defined, falling back to previous build
+[Coverage] -> Found reference result 'io.jenkins.plugins.coverage.CoverageAction@6a289dfe'
+[Coverage] Verify uniqueness of file paths...
+[Coverage] Obtaining action of reference build
+[Coverage] Reference build recorder is not configured
+[Coverage] -> No reference build defined, falling back to previous build: '#61'
+[Coverage] -> Found reference result in build '#61'
+[Coverage] Calculating the code delta...
+[Coverage] -> No delta calculator installed yet. You need to install the 'git-forensics' plugin to enable it for Git.
+[Coverage] Calculating coverage deltas...
+[Coverage] Executing source code painting...
+[Coverage] Finished coverage processing - adding the action to the build...
+[Checks API] No suitable checks publisher found.
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] node
+Running on linux-build in /home/jenkins/agent/workspace/taskflow-pipeline
+[Pipeline] {
+[Pipeline] echo
+❌ Failed at stage: Declarative: Post Actions
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // timeout
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] End of Pipeline
+ERROR: Pipeline Health Gate BLOCKED: success rate 30.0% over the last 20 builds is below the 90% threshold - Deploy — Production will not run
+Finished: FAILURE
+Completed taskflow-pipeline #62 : FAILURE
