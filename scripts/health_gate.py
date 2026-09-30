@@ -1,46 +1,40 @@
 #!/usr/bin/env python3
-"""Lab 10 Pipeline Health Gate helper: build success rate of this Jenkins job from Prometheus.
+"""Lab 10 Pipeline Health Gate helper: rolling build success rate of this Jenkins job over its LAST N BUILDS.
 
-Reads PROM_URL, JOB_NAME, HEALTH_WINDOW from the environment and prints exactly one line:
-    HEALTH status=ok     success=<n> total=<n> rate=<percent>
-    HEALTH status=nodata success=<n|None> total=<n|None>
-Exits non-zero (message on stderr) if Prometheus is unreachable or answers with an error -- the gate
-must fail then; a monitoring outage is never read as a healthy pipeline.
+Reads HEALTH_RESULTS (comma separated results of the most recent COMPLETED builds, newest first, produced by the
+Jenkinsfile from the job's own build history) and HEALTH_BUILDS (N, default 20). Prints exactly one line:
+    HEALTH status=ok     builds=<n> of <N> success=<s> total=<n> rate=<percent>
+    HEALTH status=nodata builds=0 of <N>
+Exits non-zero (message on stderr) on unusable input -- the gate must fail then, never read it as healthy.
 
-The Jenkins counters are sparse, so rate()/increase() under-count them (a 0 -> 1 step is invisible to
-increase(); measured on this setup). The exact count of builds in the window is the difference between now
-and WINDOW ago; a series that did not exist WINDOW ago counts as 0.
+Why Jenkins build history and not Prometheus: the Jenkins Prometheus counters (..._build_count_total) restart at 0
+with every Jenkins restart and have no per-build information (measured: 2 builds counted while the job has 61), so
+"the last 20 builds" cannot be derived from them. The build history is the authoritative per-build record.
+
+Counting rules (documented so the number is reproducible):
+  * SUCCESS counts as a success; FAILURE and UNSTABLE count as not successful.
+  * ABORTED / NOT_BUILT / still-running builds are not health signals and are skipped (the Jenkinsfile does this).
+  * Fewer than N builds: all available builds are used and reported as "<n> of <N>".
+  * Zero builds: status=nodata (explicit warning in the Jenkinsfile), never a fake 100%.
 """
-import json
 import os
 import sys
-import urllib.parse
-import urllib.request
 
-prom, job, window = os.environ["PROM_URL"], os.environ["JOB_NAME"], os.environ["HEALTH_WINDOW"]
+VALID = {"SUCCESS", "UNSTABLE", "FAILURE"}
 
+n_max = int(os.environ.get("HEALTH_BUILDS", "20"))
+raw = os.environ.get("HEALTH_RESULTS")
+if raw is None:
+    sys.exit("HEALTH_RESULTS is not set")
+results = [r.strip() for r in raw.split(",") if r.strip()]
+bad = [r for r in results if r not in VALID]
+if bad:
+    sys.exit("unexpected build result(s): %s" % ",".join(sorted(set(bad))))
+results = results[:n_max]
 
-def delta(metric):
-    sel = metric + '{jenkins_job="' + job + '"}'
-    q = "sum(" + sel + ") - (sum(" + sel + " offset " + window + ") or vector(0))"
-    url = prom + "/api/v1/query?" + urllib.parse.urlencode({"query": q})
-    try:
-        body = json.load(urllib.request.urlopen(url, timeout=10))
-    except Exception as e:  # unreachable, HTTP error (bad window -> 400), bad JSON
-        sys.exit("Prometheus query failed (%s): %s" % (type(e).__name__, e))
-    if body.get("status") != "success":
-        sys.exit("Prometheus returned status=%r" % body.get("status"))
-    res = body["data"]["result"]
-    return float(res[0]["value"][1]) if res else None
-
-
-ok = delta("default_jenkins_builds_success_build_count_total")
-total = delta("default_jenkins_builds_total_build_count_total")
-# The success counter only exists after the first successful build (measured: total=1, success series absent after one
-# failed build). Builds were counted but none succeeded => 0 successes (0%), not "no data".
-if total is not None and total > 0 and ok is None:
-    ok = 0.0
-if total is None or ok is None or total <= 0:
-    print("HEALTH status=nodata success=%s total=%s" % (ok, total))
+if not results:
+    print("HEALTH status=nodata builds=0 of %d" % n_max)
 else:
-    print("HEALTH status=ok success=%d total=%d rate=%.1f" % (ok, total, 100.0 * ok / total))
+    ok = sum(1 for r in results if r == "SUCCESS")
+    total = len(results)
+    print("HEALTH status=ok builds=%d of %d success=%d total=%d rate=%.1f" % (total, n_max, ok, total, 100.0 * ok / total))

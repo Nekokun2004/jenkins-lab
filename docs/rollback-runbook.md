@@ -63,6 +63,6 @@ build link, failed stage, live colour now, who is investigating.
 - Open an incident ticket with the evidence above; do not re-run until the root cause is named.
 - Re-run only after the fix is merged; one build at a time (`disableConcurrentBuilds()` is on, never start two by hand).
 - Never approve `Terraform Apply` just to "get further" - review the plan.
-- If the `Pipeline Health Gate` blocked: its console shows the measured success rate. Fix the failing builds; the gate
-  re-opens by itself once the failures age out of the window (`HEALTH_WINDOW`, default 1h) or enough successful builds
-  lift the rate to 90%. It is not bypassed by editing the threshold.
+- If the `Pipeline Health Gate` blocked: its console shows the builds considered (newest first), the measured success rate
+  over the last 20 completed builds and the 90% threshold. Fix the failing builds; the gate re-opens by itself as
+  successful builds replace failures in that 20-build window and lift the rate to 90%. It is not bypassed by editing the threshold.

@@ -28,7 +28,7 @@ graph LR
     M --> N[Terraform Apply<br/>LocalStack]
     N --> O[Ansible]
     O --> P[Deploy Staging<br/>branch develop]
-    P --> Q[Pipeline Health Gate<br/>Prometheus]
+    P --> Q[Pipeline Health Gate<br/>last 20 builds]
     Q --> R[Deploy Production<br/>branch main + input]
 ```
 
@@ -37,8 +37,11 @@ graph LR
 - **SAST** runs its two scanners one after the other: Declarative Pipeline rejects a `parallel` nested inside a
   `parallel` (checked with the Jenkins linter).
 - **IaC stages** are skipped when the build parameter `SKIP_IAC` is true (test aid, default false).
-- **Pipeline Health Gate** blocks `Deploy — Production` when the job's build success rate over `HEALTH_WINDOW`
-  (default 1h) is below 90%. It runs on every branch; only `main` goes on to deploy.
+- **Pipeline Health Gate** blocks `Deploy — Production` when the job's rolling build success rate over its **last 20
+  completed builds** is below 90%. The rate comes from the job's own Jenkins build history (SUCCESS = success; FAILURE and
+  UNSTABLE = not; ABORTED / running builds are skipped). With fewer than 20 builds it uses what exists and prints
+  "N builds available out of 20"; with none it prints an explicit no-data warning (never a fake 100%). It runs on every
+  branch; only `main` goes on to deploy.
 
 ## `taskflow-mobile` pipeline (Flutter, job `taskflow-mobile-pipeline`)
 
@@ -54,7 +57,7 @@ graph LR
 graph LR
     J[Jenkins /prometheus] -->|scrape 15s| P[Prometheus :9090]
     P --> G[Grafana :3000<br/>Jenkins Pipeline SLO + alert]
-    P -->|query build counters| H[Pipeline Health Gate]
+    B[Jenkins build history<br/>last 20 builds] -->|results| H[Pipeline Health Gate]
     H -->|block or pass| Q[Deploy Production]
 ```
 

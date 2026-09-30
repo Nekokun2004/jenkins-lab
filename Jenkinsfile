@@ -9,14 +9,11 @@ pipeline {
         TF_IN_AUTOMATION = '1'
         TF_INPUT = '0'
         // Lab 10 Pipeline Health Gate
-        PROM_URL = 'http://localhost:9090'
         HEALTH_THRESHOLD = '90'
-        HEALTH_WINDOW = "${params.HEALTH_WINDOW}"
+        HEALTH_BUILDS = '20'
     }
 
     parameters {
-        string(name: 'HEALTH_WINDOW', defaultValue: '1h',
-               description: 'Lab 10 Pipeline Health Gate: look-back window for the build success rate (Prometheus duration, e.g. 1h, 6h)')
         booleanParam(name: 'SKIP_IAC', defaultValue: false,
                      description: 'Lab 10 test aid: skip the Lab 08 IaC stages (Terraform plan/approval/apply, Ansible) so a run can reach the Pipeline Health Gate without a human Terraform approval. Default false = full pipeline.')
         choice(name: 'DEPLOY_FAULT', choices: ['none', 'bad-image', 'post-switch-fail'],
@@ -658,25 +655,39 @@ pipeline {
             agent { label 'linux-build' }
             steps {
                 script {
-                    // Builds that succeeded / finished in the last HEALTH_WINDOW, from Prometheus (Lab 09);
-                    // the query and why it is not rate()/increase() are documented in scripts/health_gate.py.
-                    // A Prometheus outage makes that script exit non-zero, which fails this stage (never a silent pass).
+                    // Rolling success rate over the LAST HEALTH_BUILDS (20) completed builds of this job, from the job's own
+                    // build history (Jenkins Prometheus counters restart with Jenkins and hold no per-build data, see
+                    // scripts/health_gate.py). ABORTED / NOT_BUILT builds are not health signals and are skipped; the current
+                    // (running) build is not included. Newest first.
+                    def want = env.HEALTH_BUILDS as Integer
+                    def results = []
+                    def b = currentBuild.previousBuild
+                    def scanned = 0
+                    while (b != null && results.size() < want && scanned < 500) {
+                        def r = b.result
+                        if (r == 'SUCCESS' || r == 'UNSTABLE' || r == 'FAILURE') { results << r }
+                        b = b.previousBuild
+                        scanned++
+                    }
+                    env.HEALTH_RESULTS = results.join(',')
+                    // bad/unreadable input makes the script exit non-zero, which fails this stage (never a silent pass)
                     def result = sh(returnStdout: true, script: 'python3 scripts/health_gate.py').trim()
                     def line = result.readLines().find { it.startsWith('HEALTH ') }
                     if (line == null) {
-                        error("Pipeline Health Gate: could not read the success rate from Prometheus. Output: ${result}")
+                        error("Pipeline Health Gate: could not compute the success rate. Output: ${result}")
                     }
-                    echo "Prometheus: ${env.PROM_URL}  job: ${env.JOB_NAME}  window: ${env.HEALTH_WINDOW}  threshold: ${env.HEALTH_THRESHOLD}%"
+                    echo "Job: ${env.JOB_NAME}  window: last ${want} completed builds  threshold: ${env.HEALTH_THRESHOLD}%"
+                    echo "Builds considered (newest first): ${env.HEALTH_RESULTS}"
                     echo line
                     if (line.contains('status=nodata')) {
-                        // Not treated as 100%: there is simply nothing to measure. Blocking here would deadlock the
-                        // pipeline once the window has emptied (every blocked build adds a failure, nothing can recover).
-                        echo "WARNING: no completed builds in the last ${env.HEALTH_WINDOW}; success rate unknown -> gate PASSES without health evidence"
+                        // Not treated as 100%: there is simply nothing to measure (first build of a job).
+                        echo "WARNING: no completed builds in this job's history (0 builds available out of ${want}); success rate unknown -> gate PASSES without health evidence"
                     } else {
                         def rate = line.split('rate=')[1].trim() as BigDecimal
+                        echo "${results.size()} builds available out of ${want}"
                         echo "Rolling build success rate: ${rate}%  (threshold ${env.HEALTH_THRESHOLD}%)"
                         if (rate < (env.HEALTH_THRESHOLD as BigDecimal)) {
-                            error("Pipeline Health Gate BLOCKED: success rate ${rate}% is below the ${env.HEALTH_THRESHOLD}% threshold - Deploy — Production will not run")
+                            error("Pipeline Health Gate BLOCKED: success rate ${rate}% over the last ${results.size()} builds is below the ${env.HEALTH_THRESHOLD}% threshold - Deploy — Production will not run")
                         }
                         echo "Pipeline Health Gate PASSED: ${rate}% >= ${env.HEALTH_THRESHOLD}%"
                     }
