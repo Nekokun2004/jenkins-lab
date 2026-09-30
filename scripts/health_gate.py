@@ -36,6 +36,10 @@ def delta(metric):
 
 ok = delta("default_jenkins_builds_success_build_count_total")
 total = delta("default_jenkins_builds_total_build_count_total")
+# The success counter only exists after the first successful build (measured: total=1, success series absent after one
+# failed build). Builds were counted but none succeeded => 0 successes (0%), not "no data".
+if total is not None and total > 0 and ok is None:
+    ok = 0.0
 if total is None or ok is None or total <= 0:
     print("HEALTH status=nodata success=%s total=%s" % (ok, total))
 else:
