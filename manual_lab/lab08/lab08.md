@@ -505,6 +505,36 @@ git push origin lab08
 ```
 กด Build Now ใหม่ — **เก็บ log ตรงนี้เป็นหลักฐาน "after"**
 
+### ผลจริงที่เกิดขึ้น (Build #56 → แก้ตามนี้) — ต่างจากตัวอย่างข้างบน
+
+Build #56 แดงที่ `IaC Security Scan` ตามที่ตั้งใจ. output จริงของ scanner:
+
+| Tool | Rule | Finding | Action |
+|---|---|---|---|
+| tfsec | `aws-ec2-no-public-ingress-sgr` (CRITICAL, main.tf:50) | ingress 8080 จาก `0.0.0.0/0` | **แก้**: `172.17.0.0/16` |
+| tfsec | `aws-ec2-no-public-egress-sgr` (CRITICAL, main.tf:57) | egress ไป `0.0.0.0/0` | **แก้**: `172.17.0.0/16` |
+| tfsec | `aws-ec2-enforce-http-token-imds` (HIGH) | ไม่บังคับ IMDSv2 | **แก้**: `metadata_options { http_tokens = "required" }` |
+| tfsec | `aws-ec2-add-description-to-security-group-rule` (LOW) | egress ไม่มี description | **แก้**: เพิ่ม `description` |
+| tfsec | `aws-ec2-enable-at-rest-encryption` (HIGH) | root volume ไม่เข้ารหัส | **suppress** (ดูล่าง) |
+| Checkov | `CKV_AWS_382`, `CKV_AWS_23`, `CKV_AWS_79`, `CKV_AWS_135` | egress เปิด / ไม่มี description / IMDSv1 / ไม่ EBS optimized | **แก้**: egress แคบลง, description, IMDSv2, `ebs_optimized = true` |
+| Checkov | `CKV_AWS_8` | root volume ไม่เข้ารหัส | **suppress** |
+| Checkov | `CKV_AWS_126` | ไม่เปิด detailed monitoring | **suppress** |
+| Checkov | `CKV2_AWS_41` | ไม่มี IAM role | **suppress** |
+
+**CIDR ที่ใช้จริง: `172.17.0.0/16`** (docker bridge — ที่ Jenkins/kind อยู่) แคบกว่า `172.16.0.0/12` ในตัวอย่าง และผ่านทั้ง tfsec และ Checkov.
+
+**Suppress เฉพาะที่ LocalStack Community ทำไม่ได้จริง (ทดสอบแล้ว ไม่ใช่เดา)** — ใช้ inline ต่อ resource เท่านั้น ไม่มี global exclusion:
+- root volume encryption: `root_block_device { encrypted = true }` ทำให้ `terraform apply` ล้มเหลว `collecting instance settings: couldn't find resource` (LocalStack ไม่มี root EBS volume จริง) → `#tfsec:ignore:aws-ec2-enable-at-rest-encryption` + `#checkov:skip=CKV_AWS_8`
+- detailed monitoring: `monitoring = true` ล้มเหลว `MonitorInstances ... 501 not yet implemented` → `#checkov:skip=CKV_AWS_126`
+- IAM role: host ไม่เรียก AWS API และ LocalStack รันแค่ `ec2,s3,sts` → `#checkov:skip=CKV2_AWS_41`
+
+บน AWS จริงควรเปิดทั้งสามอย่าง — เขียนไว้ในรายงานหัวข้อ Known Limitations.
+
+**ข้อเท็จจริงของการติดตั้งจริงที่ต่างจากขั้นที่ 1–2:**
+- `localstack/localstack:latest` ตอนนี้ต้องมี auth token (ไม่รันถ้าไม่มี) → pin `localstack/localstack:4.9.2` (ยังรันได้โดยไม่ต้องมี token)
+- Terraform `1.9.8` ยังดาวน์โหลดได้ จึงใช้ตามเดิม (tfsec `v1.28.14`)
+- SonarQube ต้องมี webhook `http://172.17.0.1:8080/sonarqube-webhook/` ไม่งั้น `waitForQualityGate` ค้างที่ `IN_PROGRESS` จน timeout (พบใน build #55)
+
 ---
 
 ## ขั้นที่ 14 — กด Approve ที่ `Approval` stage `[UI]`
