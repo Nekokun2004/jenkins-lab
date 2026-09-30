@@ -37,3 +37,6 @@ npm-debug.log*
 
 # Lab build artifacts
 *.zip
+
+# Lab 07 container scan output (Jenkins-generated per build)
+trivy-report.sarif

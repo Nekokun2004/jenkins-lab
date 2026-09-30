@@ -23,6 +23,12 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/src ./src
 
+# Lab 07 container-scan hardening (Trivy HIGH/CRITICAL gate): the runtime never runs npm/npx/corepack, and
+# npm's own bundled deps (tar, glob, minimatch, ...) account for every Node.js finding; OpenSSL has a patched apk.
+RUN apk upgrade --no-cache libssl3 libcrypto3 \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 USER node
 
 EXPOSE 8080
