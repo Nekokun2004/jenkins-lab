@@ -28,7 +28,22 @@ pipeline {
 
     stages {
         stage('Install') {
-            agent { docker { image 'node:20-alpine' } }
+            agent {
+                kubernetes {
+                    // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
+                    defaultContainer 'node'
+                    yaml '''
+                        apiVersion: v1
+                        kind: Pod
+                        spec:
+                          containers:
+                          - name: node
+                            image: node:20-alpine
+                            command: ['cat']
+                            tty: true
+                        '''
+                }
+            }
             steps {
                 sh 'npm ci'
             }
@@ -236,14 +251,44 @@ pipeline {
         stage('Checks') {
             parallel {
                 stage('Lint') {
-                    agent { docker { image 'node:20-alpine' } }
+                    agent {
+                        kubernetes {
+                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
+                            defaultContainer 'node'
+                            yaml '''
+                                apiVersion: v1
+                                kind: Pod
+                                spec:
+                                  containers:
+                                  - name: node
+                                    image: node:20-alpine
+                                    command: ['cat']
+                                    tty: true
+                                '''
+                        }
+                    }
                     steps {
                         sh 'npm ci'
                         sh 'npm run lint'
                     }
                 }
                 stage('Unit Test') {
-                    agent { docker { image 'node:20-alpine' } }
+                    agent {
+                        kubernetes {
+                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
+                            defaultContainer 'node'
+                            yaml '''
+                                apiVersion: v1
+                                kind: Pod
+                                spec:
+                                  containers:
+                                  - name: node
+                                    image: node:20-alpine
+                                    command: ['cat']
+                                    tty: true
+                                '''
+                        }
+                    }
                     steps {
                         sh 'npm ci'
                         sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
