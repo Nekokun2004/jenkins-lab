@@ -1,4 +1,4 @@
-FROM node:20-alpine AS build
+FROM node:16-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm prune --omit=dev \
     && find src node_modules -type f \( -name '*.map' -o -name '*.test.js' -o -name '*.spec.js' \) -delete \
     && npm cache clean --force
 
-FROM node:20-alpine
+FROM node:16-alpine
 
 WORKDIR /app
 
