@@ -1,0 +1,428 @@
+diff --git a/Jenkinsfile b/Jenkinsfile
+index ff2a2e4..f502d37 100644
+--- a/Jenkinsfile
++++ b/Jenkinsfile
+@@ -8,9 +8,17 @@ pipeline {
+         // Lab 08: no interactive prompts / hints from Terraform in the console
+         TF_IN_AUTOMATION = '1'
+         TF_INPUT = '0'
++        // Lab 10 Pipeline Health Gate
++        PROM_URL = 'http://localhost:9090'
++        HEALTH_THRESHOLD = '90'
++        HEALTH_WINDOW = "${params.HEALTH_WINDOW}"
+     }
+ 
+     parameters {
++        string(name: 'HEALTH_WINDOW', defaultValue: '1h',
++               description: 'Lab 10 Pipeline Health Gate: look-back window for the build success rate (Prometheus duration, e.g. 1h, 6h)')
++        booleanParam(name: 'SKIP_IAC', defaultValue: false,
++                     description: 'Lab 10 test aid: skip the Lab 08 IaC stages (Terraform plan/approval/apply, Ansible) so a run can reach the Pipeline Health Gate without a human Terraform approval. Default false = full pipeline.')
+         choice(name: 'DEPLOY_FAULT', choices: ['none', 'bad-image', 'post-switch-fail'],
+                description: 'Lab 07 failure injection. none = normal deploy; bad-image = deploy a nonexistent tag (rollout times out before the switch); post-switch-fail = fail the verification AFTER the Service switch (rollback flips the selector back)')
+     }
+@@ -48,111 +56,159 @@ pipeline {
+                 sh 'npm ci'
+             }
+         }
+-        stage('Secrets Detection') {
+-            agent { label 'linux-build' }
+-            steps {
+-                script {
+-                    // -u 0:0 (numeric root, not the name 'root'): forced preemptively so a
+-                    // future scanner-image swap can't silently reintroduce a uid-mismatch bug
+-                    // like the ones already hit in SCA and Generate SBOM.
+-                    docker.image('zricethezav/gitleaks:latest').inside('--entrypoint="" -u 0:0') {
+-                        sh '''
+-                            gitleaks detect --source . --no-git \
+-                                --report-format json --report-path gitleaks-report.json -v || \
+-                            gitleaks detect --source . --no-git \
+-                                --report-format json --report-path gitleaks-report.json --exit-code 0
+-                            # ran as root: hand the report back to the workspace owner
+-                            chown "$(stat -c '%u:%g' .)" gitleaks-report.json
+-                        '''
+-                    }
+-                }
+-            }
+-            post {
+-                always {
+-                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+-                }
+-            }
+-        }
+-
+-        stage('SAST') {
++        stage('Fast Checks') {
+             parallel {
+-                stage('ESLint Security') {
+-                    agent { docker { image 'node:20-alpine' } }
++                stage('Lint') {
++                    agent {
++                        kubernetes {
++                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
++                            defaultContainer 'node'
++                            yaml '''
++                                apiVersion: v1
++                                kind: Pod
++                                spec:
++                                  containers:
++                                  - name: node
++                                    image: node:20-alpine
++                                    command: ['cat']
++                                    tty: true
++                                '''
++                        }
++                    }
+                     steps {
+                         sh 'npm ci'
+-                        sh 'npx eslint --plugin security -f @microsoft/eslint-formatter-sarif -o eslint-report.sarif src/ || true'
++                        sh 'npm run lint'
+                     }
+-                    post {
+-                        always {
+-                            archiveArtifacts artifacts: 'eslint-report.sarif', allowEmptyArchive: true
++                }
++                stage('Unit Test') {
++                    agent {
++                        kubernetes {
++                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
++                            defaultContainer 'node'
++                            yaml '''
++                                apiVersion: v1
++                                kind: Pod
++                                spec:
++                                  containers:
++                                  - name: node
++                                    image: node:20-alpine
++                                    command: ['cat']
++                                    tty: true
++                                '''
+                         }
+                     }
++                    steps {
++                        sh 'npm ci'
++                        sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
++                        stash name: 'coverage-report', includes: 'coverage/**, reports/**'
++                    }
+                 }
+-                stage('Semgrep') {
++                stage('Secrets Detection') {
+                     agent { label 'linux-build' }
+                     steps {
+                         script {
+-                            docker.image('semgrep/semgrep:latest').inside('-u 0:0') {
++                            // -u 0:0 (numeric root, not the name 'root'): forced preemptively so a
++                            // future scanner-image swap can't silently reintroduce a uid-mismatch bug
++                            // like the ones already hit in SCA and Generate SBOM.
++                            docker.image('zricethezav/gitleaks:latest').inside('--entrypoint="" -u 0:0') {
+                                 sh '''
+-                                    semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true
++                                    gitleaks detect --source . --no-git \
++                                        --report-format json --report-path gitleaks-report.json -v || \
++                                    gitleaks detect --source . --no-git \
++                                        --report-format json --report-path gitleaks-report.json --exit-code 0
+                                     # ran as root: hand the report back to the workspace owner
+-                                    chown "$(stat -c '%u:%g' .)" semgrep-report.sarif
++                                    chown "$(stat -c '%u:%g' .)" gitleaks-report.json
+                                 '''
+                             }
+                         }
+                     }
+                     post {
+                         always {
+-                            archiveArtifacts artifacts: 'semgrep-report.sarif', allowEmptyArchive: true
++                            archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+                         }
+                     }
+                 }
+-            }
+-        }
+-
+-        stage('SCA — npm audit') {
+-            agent {
+-                docker {
+-                    image 'node:20-alpine'
+-                    // apk add needs root to write /var/cache/apk and /lib/apk/db; Jenkins'
+-                    // Docker Pipeline plugin otherwise runs the container as uid 1000 (matching
+-                    // the agent's jenkins user), which fails with "Unable to open log:
+-                    // Permission denied" before jq is even installed — confirmed by reproducing
+-                    // the exact error with `docker run -u 1000:1000`.
+-                    args '-u root'
+-                }
+-            }
+-            steps {
+-                script {
+-                    // npm audit resolves entirely from package.json/package-lock.json — it
+-                    // does not need node_modules installed. Skipping npm ci here means this
+-                    // stage never creates node_modules at all, so there's nothing for the
+-                    // root-owned-file residue problem (that we hit and fixed once already)
+-                    // to even apply to. Verified locally: audit.json comes out identical
+-                    // with or without a prior npm ci.
+-                    sh 'apk add --no-cache jq'
+-                    sh 'npm audit --audit-level=high --json > audit.json || true'
+-                    // container runs as root (needed for apk): hand audit.json back to the
+-                    // workspace owner so the later unstash/overwrite as uid 1000 can't collide
+-                    sh 'chown "$(stat -c \'%u:%g\' .)" audit.json'
+-                    def critical = sh(
+-                        script: "jq '.metadata.vulnerabilities.critical' audit.json",
+-                        returnStdout: true
+-                    ).trim().toInteger()
+-                    if (critical > 0) {
+-                        error("Blocking: ${critical} critical vulnerabilities found")
++                stage('SAST') {
++                    // Declarative Pipeline does not allow a parallel nested inside this parallel (validated by the
++                    // Jenkins linter), so the two scanners run one after the other inside this Fast Checks lane.
++                    stages {
++                        stage('ESLint Security') {
++                            agent { docker { image 'node:20-alpine' } }
++                            steps {
++                                sh 'npm ci'
++                                sh 'npx eslint --plugin security -f @microsoft/eslint-formatter-sarif -o eslint-report.sarif src/ || true'
++                            }
++                            post {
++                                always {
++                                    archiveArtifacts artifacts: 'eslint-report.sarif', allowEmptyArchive: true
++                                }
++                            }
++                        }
++                        stage('Semgrep') {
++                            agent { label 'linux-build' }
++                            steps {
++                                script {
++                                    docker.image('semgrep/semgrep:latest').inside('-u 0:0') {
++                                        sh '''
++                                            semgrep --config=p/owasp-top-ten --config=p/nodejs --sarif -o semgrep-report.sarif src/ || true
++                                            # ran as root: hand the report back to the workspace owner
++                                            chown "$(stat -c '%u:%g' .)" semgrep-report.sarif
++                                        '''
++                                    }
++                                }
++                            }
++                            post {
++                                always {
++                                    archiveArtifacts artifacts: 'semgrep-report.sarif', allowEmptyArchive: true
++                                }
++                            }
++                        }
+                     }
+-                    echo "SCA passed with 0 critical vulnerabilities (warnings allowed)"
+                 }
+-            }
+-            post {
+-                always {
+-                    archiveArtifacts artifacts: 'audit.json', allowEmptyArchive: true
+-                    stash name: 'audit-report', includes: 'audit.json'
++                stage('SCA — npm audit') {
++                    agent {
++                        docker {
++                            image 'node:20-alpine'
++                            // apk add needs root to write /var/cache/apk and /lib/apk/db; Jenkins'
++                            // Docker Pipeline plugin otherwise runs the container as uid 1000 (matching
++                            // the agent's jenkins user), which fails with "Unable to open log:
++                            // Permission denied" before jq is even installed — confirmed by reproducing
++                            // the exact error with `docker run -u 1000:1000`.
++                            args '-u root'
++                        }
++                    }
++                    steps {
++                        script {
++                            // npm audit resolves entirely from package.json/package-lock.json — it
++                            // does not need node_modules installed. Skipping npm ci here means this
++                            // stage never creates node_modules at all, so there's nothing for the
++                            // root-owned-file residue problem (that we hit and fixed once already)
++                            // to even apply to. Verified locally: audit.json comes out identical
++                            // with or without a prior npm ci.
++                            sh 'apk add --no-cache jq'
++                            sh 'npm audit --audit-level=high --json > audit.json || true'
++                            // container runs as root (needed for apk): hand audit.json back to the
++                            // workspace owner so the later unstash/overwrite as uid 1000 can't collide
++                            sh 'chown "$(stat -c \'%u:%g\' .)" audit.json'
++                            def critical = sh(
++                                script: "jq '.metadata.vulnerabilities.critical' audit.json",
++                                returnStdout: true
++                            ).trim().toInteger()
++                            if (critical > 0) {
++                                error("Blocking: ${critical} critical vulnerabilities found")
++                            }
++                            echo "SCA passed with 0 critical vulnerabilities (warnings allowed)"
++                        }
++                    }
++                    post {
++                        always {
++                            archiveArtifacts artifacts: 'audit.json', allowEmptyArchive: true
++                            stash name: 'audit-report', includes: 'audit.json'
++                        }
++                    }
+                 }
+             }
+         }
+-
+         stage('Generate SBOM') {
+             agent { label 'linux-build' }
+             steps {
+@@ -217,7 +273,6 @@ pipeline {
+                 }
+             }
+         }
+-
+         stage('Policy Gate') {
+             agent { label 'linux-build' }
+             steps {
+@@ -247,56 +302,6 @@ pipeline {
+                 }
+             }
+         }
+-
+-        stage('Checks') {
+-            parallel {
+-                stage('Lint') {
+-                    agent {
+-                        kubernetes {
+-                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
+-                            defaultContainer 'node'
+-                            yaml '''
+-                                apiVersion: v1
+-                                kind: Pod
+-                                spec:
+-                                  containers:
+-                                  - name: node
+-                                    image: node:20-alpine
+-                                    command: ['cat']
+-                                    tty: true
+-                                '''
+-                        }
+-                    }
+-                    steps {
+-                        sh 'npm ci'
+-                        sh 'npm run lint'
+-                    }
+-                }
+-                stage('Unit Test') {
+-                    agent {
+-                        kubernetes {
+-                            // The plugin always adds a `jnlp` container; without this, `sh` would run in it (no node/npm).
+-                            defaultContainer 'node'
+-                            yaml '''
+-                                apiVersion: v1
+-                                kind: Pod
+-                                spec:
+-                                  containers:
+-                                  - name: node
+-                                    image: node:20-alpine
+-                                    command: ['cat']
+-                                    tty: true
+-                                '''
+-                        }
+-                    }
+-                    steps {
+-                        sh 'npm ci'
+-                        sh 'npm test -- --coverage --reporters=default --reporters=jest-junit'
+-                        stash name: 'coverage-report', includes: 'coverage/**, reports/**'
+-                    }
+-                }
+-            }
+-        }
+         stage('SonarQube Analysis') {
+             agent { label 'linux-build' }
+             steps {
+@@ -502,6 +507,10 @@ pipeline {
+             }
+         }
+         stage('IaC Lint & Validate') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             parallel {
+                 stage('Terraform Validate') {
+                     agent { label 'linux-build' }
+@@ -524,6 +533,10 @@ pipeline {
+             }
+         }
+         stage('IaC Security Scan') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             agent { label 'linux-build' }
+             steps {
+                 dir('infra/terraform') {
+@@ -544,6 +557,10 @@ pipeline {
+             }
+         }
+         stage('Terraform Plan') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             agent { label 'linux-build' }
+             steps {
+                 // Persistent workspace: never let a previous build's plan be re-used.
+@@ -562,6 +579,10 @@ pipeline {
+             }
+         }
+         stage('Approval') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             agent { label 'linux-build' }
+             steps {
+                 unstash 'tfplan-artifact'
+@@ -585,6 +606,10 @@ pipeline {
+             }
+         }
+         stage('Terraform Apply') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             agent { label 'linux-build' }
+             steps {
+                 sh 'rm -f infra/terraform/tfplan infra/terraform/tf-outputs.json'
+@@ -603,6 +628,10 @@ pipeline {
+             }
+         }
+         stage('Configure with Ansible') {
++            when {
++                beforeAgent true
++                expression { !params.SKIP_IAC }
++            }
+             agent { label 'linux-build' }
+             steps {
+                 // dynamic_inventory.sh reads `terraform output`, which needs an initialised backend in THIS workspace
+@@ -625,6 +654,35 @@ pipeline {
+                 sh 'echo deploying to staging...'
+             }
+         }
++        stage('Pipeline Health Gate') {
++            agent { label 'linux-build' }
++            steps {
++                script {
++                    // Builds that succeeded / finished in the last HEALTH_WINDOW, from Prometheus (Lab 09);
++                    // the query and why it is not rate()/increase() are documented in scripts/health_gate.py.
++                    // A Prometheus outage makes that script exit non-zero, which fails this stage (never a silent pass).
++                    def result = sh(returnStdout: true, script: 'python3 scripts/health_gate.py').trim()
++                    def line = result.readLines().find { it.startsWith('HEALTH ') }
++                    if (line == null) {
++                        error("Pipeline Health Gate: could not read the success rate from Prometheus. Output: ${result}")
++                    }
++                    echo "Prometheus: ${env.PROM_URL}  job: ${env.JOB_NAME}  window: ${env.HEALTH_WINDOW}  threshold: ${env.HEALTH_THRESHOLD}%"
++                    echo line
++                    if (line.contains('status=nodata')) {
++                        // Not treated as 100%: there is simply nothing to measure. Blocking here would deadlock the
++                        // pipeline once the window has emptied (every blocked build adds a failure, nothing can recover).
++                        echo "WARNING: no completed builds in the last ${env.HEALTH_WINDOW}; success rate unknown -> gate PASSES without health evidence"
++                    } else {
++                        def rate = line.split('rate=')[1].trim() as BigDecimal
++                        echo "Rolling build success rate: ${rate}%  (threshold ${env.HEALTH_THRESHOLD}%)"
++                        if (rate < (env.HEALTH_THRESHOLD as BigDecimal)) {
++                            error("Pipeline Health Gate BLOCKED: success rate ${rate}% is below the ${env.HEALTH_THRESHOLD}% threshold - Deploy — Production will not run")
++                        }
++                        echo "Pipeline Health Gate PASSED: ${rate}% >= ${env.HEALTH_THRESHOLD}%"
++                    }
++                }
++            }
++        }
+         stage('Deploy — Production') {
+             agent { label 'linux-build' }
+             when {

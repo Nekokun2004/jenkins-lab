@@ -6,7 +6,7 @@ container context Jenkins would give it; every result is verified by a SEPARATE 
 Runs the whole sequence N times (default 2) in ONE persistent workspace, so pass 2 catches
 stale-state bugs exactly like a second real build would.
 
-Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep] [--lab07|--lab08]
+Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep] [--lab07|--lab08|--lab10]
 --lab08 runs only the IaC stages against LocalStack, using a throwaway state key (never the real one).
 Not reproducible locally (verify prerequisites only): withSonarQubeEnv/waitForQualityGate,
 junit/publishCoverage/archiveArtifacts, `when { branch }`, `input`.
@@ -609,6 +609,27 @@ def lab08_cleanup():
 LAB08_STAGES = [st_tf_validate, st_ansible_lint, st_iac_scan, st_tf_plan, st_approval, st_tf_apply, st_ansible]
 
 
+# ---------------------------------------------------------------- Lab 10
+@stage("Pipeline Health Gate (script)")
+def st_health_gate():
+    ss = snippets("Pipeline Health Gate")
+    must(any("scripts/health_gate.py" in s for s in ss), f"gate no longer calls scripts/health_gate.py: {ss}")
+    env = {"PROM_URL": "http://localhost:9090", "JOB_NAME": "taskflow-pipeline", "HEALTH_WINDOW": "1h"}
+    rc, o = l8("python3 scripts/health_gate.py", env)
+    must(rc == 0 and re.search(r"^HEALTH status=(ok|nodata) ", o, re.M), "unexpected gate output: " + o[-300:])
+    # Prometheus down => the stage must FAIL, never read as healthy
+    rc, o = agent_exec("python3 scripts/health_gate.py", dict(env, PROM_URL="http://localhost:1"))
+    must(rc != 0 and "HEALTH" not in o, "unreachable Prometheus must fail the gate, got: " + o[-200:])
+    rc, o = agent_exec("python3 scripts/health_gate.py", dict(env, HEALTH_WINDOW="bogus"))
+    must(rc != 0, "bad window must fail the gate")
+    rc, o = agent_exec("python3 scripts/health_gate.py", dict(env, JOB_NAME="no-such-job"))
+    must(rc == 0 and "status=nodata" in o, "unknown job must report nodata (not a rate): " + o[-200:])
+    return "live query ok; unreachable / bad-window -> non-zero; unknown job -> nodata"
+
+
+LAB10_STAGES = None  # filled in below (needs the Lab 05-07 stage functions)
+
+
 STAGES = [st_install, st_secrets, st_eslint, st_semgrep, st_sca, st_sbom, st_policy,
           st_lint, st_unit, st_sonar, st_e2e, st_build_image, st_trivy, st_bluegreen]
 
@@ -630,6 +651,8 @@ if __name__ == "__main__":
         STAGES = STAGES[-3:]  # Build Image, Container Scan, Blue/Green Deploy only
     if "--lab08" in sys.argv:
         STAGES = LAB08_STAGES
+    if "--lab10" in sys.argv:  # Fast Checks lanes + SBOM/Policy chain + health gate; no deploys, colour untouched
+        STAGES = [st_install, st_secrets, st_eslint, st_semgrep, st_sca, st_lint, st_unit, st_sbom, st_policy, st_health_gate]
     seed_workspace()
     for n in range(1, passes + 1):
         print(f"\n===== PASS {n} ({'fresh checkout' if n == 1 else 'PERSISTENT workspace, stale state from pass ' + str(n-1)}) =====", flush=True)
