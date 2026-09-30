@@ -5,7 +5,70 @@
 
 ---
 
-## 0. Restart container หลัก 2 ตัวที่ใช้อยู่ (`jenkins` + agent)
+## 0. Restart เครื่อง / Restart container
+
+### 0.1 Restart เครื่อง (reboot) แล้วต้องทำอะไร
+
+Docker daemon เปิดเองตอน boot (`systemctl is-enabled docker` = enabled) แต่ container จะกลับมาเองหรือไม่ขึ้นกับ restart policy:
+
+| Container | Restart policy | หลัง reboot |
+|---|---|---|
+| `jenkins` | `unless-stopped` | ขึ้นเอง |
+| `kind-registry` | `always` | ขึ้นเอง |
+| `localstack` | `unless-stopped` | ขึ้นเอง **แต่ข้อมูลหาย** (ดูล่าง) |
+| `taskflow-control-plane` (kind) | `on-failure` | **ไม่ขึ้นเอง** ต้อง `docker start` |
+| `sonarqube` | `no` | **ไม่ขึ้นเอง** ต้อง `docker start` |
+| `jenkins-agent-linux-build` | `no` | **ไม่ขึ้นเอง** ต้อง `docker start` |
+
+**ห้ามลบ/สร้าง container ใหม่ตอน reboot** — แค่ `docker start` ของเดิม: `sonarqube` ไม่มี volume (ข้อมูลและ webhook อยู่ใน container นั้น), agent มี `kubectl`/`kind`/kubeconfig อยู่ใน container/image เดิม, kind cluster อยู่ใน `taskflow-control-plane`
+
+ทำตามลำดับ:
+
+```bash
+# 1) ดูสถานะ — jenkins, kind-registry, localstack ควรขึ้นเองแล้ว
+docker ps -a --format 'table {{.Names}}\t{{.Status}}'
+
+# 2) kind cluster (รอ Ready ประมาณ 1-2 นาที)
+docker start taskflow-control-plane
+until docker exec taskflow-control-plane kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes 2>/dev/null | grep -q ' Ready'; do sleep 5; done
+
+# 3) SonarQube (รอ status = UP ประมาณ 1-2 นาที)
+docker start sonarqube
+until curl -s localhost:9000/api/system/status | grep -q '"UP"'; do sleep 5; done
+
+# 4) Jenkins agent (เริ่มหลัง jenkins ขึ้นแล้ว — ใช้ WebSocket จึงต่อกลับเองได้)
+docker start jenkins-agent-linux-build
+
+# 5) LocalStack: ขึ้นเองแต่ว่างเปล่า (Community ไม่เก็บข้อมูลข้าม restart)
+#    bucket taskflow-tfstate และ EC2/security group ที่เคย apply หายทั้งหมด → สร้าง bucket ใหม่
+docker exec -e AWS_ACCESS_KEY_ID=test -e AWS_SECRET_ACCESS_KEY=test -e AWS_DEFAULT_REGION=us-east-1 \
+  jenkins-agent-linux-build aws --endpoint-url=http://localhost:4566 s3 mb s3://taskflow-tfstate
+```
+
+ถ้ายังไม่ได้ `terraform destroy` ก่อน reboot ไม่ต้องกังวล: state กับ resource หายพร้อมกัน จึงไม่ขัดกัน (Lab 08 เริ่ม plan ใหม่ได้เลย)
+
+**ตรวจว่าทุกอย่างกลับมาปกติ:**
+
+```bash
+docker exec jenkins-agent-linux-build kubectl get nodes                 # taskflow-control-plane Ready
+docker exec jenkins-agent-linux-build kubectl get svc taskflow -o jsonpath='{.spec.selector.color}{"\n"}'   # สี blue/green เดิม ไม่เปลี่ยน
+docker exec jenkins-agent-linux-build curl -fsS http://localhost:5000/v2/   # {}
+curl -s localhost:9000/api/system/status                                # "status":"UP"
+curl -s localhost:4566/_localstack/health | grep -E '"(ec2|s3)"'         # available/running
+# Jenkins UI: Manage Jenkins -> Nodes -> linux-build ต้อง online (ถ้า offline รอ 1 นาที หรือ docker restart jenkins-agent-linux-build)
+```
+
+**ถ้า kind ขึ้นแล้ว pod ค้าง:** รอสักพักก่อน (kubelet/containerd ต้อง sync) — ถ้าผ่านไป 3-5 นาทีแล้ว `kubectl get pods -A` ยังไม่ Running ค่อย `docker restart taskflow-control-plane` (อย่าลบ cluster)
+
+**อยากให้ 3 ตัวที่ไม่ขึ้นเองกลับมาเองด้วย** (ทำครั้งเดียว ไม่ต้อง recreate container):
+
+```bash
+docker update --restart unless-stopped taskflow-control-plane sonarqube jenkins-agent-linux-build
+```
+
+หมายเหตุ: limit RAM ที่ตั้งไว้ (`docker update --memory ...`) อยู่กับ container เดิม ไม่หายตอน reboot/restart แต่จะหายถ้า `docker rm` แล้วสร้างใหม่
+
+### 0.2 Restart container หลัก 2 ตัวที่ใช้อยู่ (`jenkins` + agent)
 
 ใช้บ่อยสุด เวลา container ค้าง/ดับ หรือแก้ config แล้วอยากให้ Jenkins โหลดใหม่:
 
