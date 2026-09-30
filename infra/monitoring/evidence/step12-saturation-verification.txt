@@ -1,0 +1,9 @@
+# Step 12 saturation verification log (host clock, +07)
+Cloud Concurrency Limit 10 -> 1 ; k8s-node instance cap (blank/unlimited) -> 1 ; saved config: instanceCap=1 containerCap=1
+Builds triggered via Jenkins UI: #59 (started 23:23) and #60 (queued, blocked by #59)
+23:24:28 queue=2 pods=0
+23:24:42 queue=2 pods=0
+23:24:51 queue=2 pods=0
+23:25:58 Grafana JenkinsQueueBacklog = Firing (screenshot grafana-alert-firing-step12.jpg); queue metric=2; Jenkins queue API: 1 item (#60, blocked: Build #59 is already in progress)
+23:28:06 queue=0 (after: capacity restored 23:26, #60 cancelled, #59 aborted)
+Grafana state history: Pending 23:24:10 -> Alerting(Firing) 23:24:40 -> Normal 23:28:10
