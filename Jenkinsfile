@@ -4,13 +4,22 @@ pipeline {
     environment {
         APP_NAME = 'taskflow-api'
         NODE_ENV = 'test'
+        REGISTRY = 'localhost:5000'
+    }
+
+    parameters {
+        choice(name: 'DEPLOY_FAULT', choices: ['none', 'bad-image', 'post-switch-fail'],
+               description: 'Lab 07 failure injection. none = normal deploy; bad-image = deploy a nonexistent tag (rollout times out before the switch); post-switch-fail = fail the verification AFTER the Service switch (rollback flips the selector back)')
     }
 
     options {
-        timeout(time: 10, unit: 'MINUTES')
+        timeout(time: 20, unit: 'MINUTES')
         // A hung npm install or test run must not hold the executor forever —
         // an executor stuck on one dead build blocks every other queued build
-        // from ever running on this agent.
+        // from ever running on this agent. Raised from 10 for Lab 07: Build Image + Trivy
+        // (first run downloads its DB) + kubectl rollout add several minutes.
+        disableConcurrentBuilds()
+        // Two builds flipping Service/taskflow at once would corrupt the recorded previous color.
     }
 
     stages {
@@ -275,6 +284,171 @@ pipeline {
                     sh 'docker compose down -v'
                     junit 'playwright-report/junit.xml'
                     archiveArtifacts artifacts: 'playwright-report/html/**', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Build Image') {
+            agent { label 'linux-build' }
+            steps {
+                script {
+                    // Immutable tag = first 7 chars of the Git SHA. Never 'latest'.
+                    env.SHORT_SHA = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) :
+                        sh(script: 'git rev-parse HEAD', returnStdout: true).trim().take(7)
+                    // env.* (not `def`) so the next stages — which run on a fresh agent context — still see it.
+                    env.IMAGE = "${env.REGISTRY}/${env.APP_NAME}:${env.SHORT_SHA}"
+                }
+                // docker build streams its context over docker.sock (no bind mount), so the
+                // phantom-workspace-mount quirk does not apply here.
+                sh '''
+                    set -eu
+                    echo "Building immutable image: $IMAGE"
+                    docker build -t "$IMAGE" .
+                    docker image inspect "$IMAGE" --format 'Local image id: {{.Id}}'
+                    docker push "$IMAGE"
+                    curl -fsS "http://$REGISTRY/v2/$APP_NAME/tags/list"
+                    echo
+                    curl -fsS "http://$REGISTRY/v2/$APP_NAME/tags/list" | grep -q "$SHORT_SHA"
+                    echo "Verified in registry: $IMAGE"
+                '''
+            }
+        }
+        stage('Container Scan') {
+            agent { label 'linux-build' }
+            steps {
+                // Trivy's image is distroless-ish and needs root for docker.sock. As with Syft/OPA, the
+                // workspace comes from --volumes-from (NEVER -v "$WORKSPACE:..."): that also carries the
+                // agent's /var/run/docker.sock, so Trivy sees the image just built without pulling it.
+                // Workspace persists across builds: start from a clean slate.
+                sh 'rm -f trivy-report.sarif'
+                // PASS 1: write the SARIF report no matter what is found (--exit-code 0).
+                sh '''
+                    docker run --rm -u 0:0 -v trivy-cache:/root/.cache \
+                        --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" \
+                        aquasec/trivy:latest image \
+                            --format sarif -o trivy-report.sarif \
+                            --severity HIGH,CRITICAL --exit-code 0 \
+                            "$IMAGE"
+                '''
+                // Root wrote the report: hand it back (a bare chown from the agent shell is not permitted).
+                sh '''
+                    docker run --rm -u 0:0 --volumes-from jenkins-agent-linux-build -w "$WORKSPACE" \
+                        node:20-alpine chown "$(id -u):$(id -g)" trivy-report.sarif
+                    test -s trivy-report.sarif
+                '''
+                // PASS 2: the gate. HIGH/CRITICAL => exit 1 => stage red => Blue/Green Deploy never runs.
+                sh '''
+                    docker run --rm -u 0:0 -v trivy-cache:/root/.cache \
+                        --volumes-from jenkins-agent-linux-build \
+                        aquasec/trivy:latest image \
+                            --quiet --severity HIGH,CRITICAL --exit-code 1 \
+                            "$IMAGE"
+                '''
+            }
+            post {
+                always {
+                    // runs on a red scan too, so the SARIF of a blocked image stays downloadable
+                    archiveArtifacts artifacts: 'trivy-report.sarif', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Blue/Green Deploy') {
+            agent { label 'linux-build' }
+            environment {
+                KUBECONFIG = '/home/jenkins/.kube/config'
+            }
+            steps {
+                // Stale state from a previous build must never drive this build's rollback.
+                sh 'rm -f .lab07-previous-color'
+                script {
+                    // 1) live color, recorded BEFORE anything is touched
+                    def current = sh(
+                        script: "kubectl get svc taskflow -o jsonpath='{.spec.selector.color}'",
+                        returnStdout: true
+                    ).trim()
+                    if (current != 'blue' && current != 'green') {
+                        error("Service/taskflow has unexpected color selector: '${current}'")
+                    }
+                    // 2) candidate = the other color (valid Groovy: == compares, -= would assign)
+                    def next = current == 'blue' ? 'green' : 'blue'
+                    // 3) `def` locals die with this script block and are invisible to post.failure:
+                    //    keep the rollback context in env.* AND a workspace file.
+                    env.PREV_COLOR = current
+                    env.NEXT_COLOR = next
+                    writeFile file: '.lab07-previous-color', text: current
+                    env.DEPLOY_IMAGE = (params.DEPLOY_FAULT == 'bad-image') ?
+                        "${env.REGISTRY}/${env.APP_NAME}:0000000-does-not-exist" :
+                        env.IMAGE
+                    env.VERIFY_PATH = (params.DEPLOY_FAULT == 'post-switch-fail') ? '/health-broken' : '/health'
+                    echo "Current active color: ${current}"
+                    echo "Candidate color: ${next}"
+                    echo "Deploying image: ${env.DEPLOY_IMAGE} (fault mode: ${params.DEPLOY_FAULT})"
+                }
+                sh '''
+                    set -eu
+                    # curl pod inside the cluster; url -> pod name. Retries absorb kubectl-attach races.
+                    smoke() {
+                        url="$1"; pod="$2"; n=0
+                        while [ "$n" -lt 3 ]; do
+                            n=$((n+1))
+                            kubectl delete pod "$pod" --ignore-not-found >/dev/null
+                            if out=$(kubectl run "$pod" --rm -i --restart=Never \
+                                    --image=curlimages/curl:8.10.1 --command -- \
+                                    curl -fsS --max-time 5 "$url") && echo "$out" | grep -q '"status":"ok"'; then
+                                echo "Response from $url: $out"
+                                return 0
+                            fi
+                            echo "attempt $n failed for $url"; sleep 2
+                        done
+                        return 1
+                    }
+
+                    echo "===== Service/taskflow BEFORE ====="
+                    kubectl get svc taskflow -o yaml
+
+                    # Deploy to the INACTIVE color. Service/taskflow keeps pointing at $PREV_COLOR throughout.
+                    kubectl set image deployment/taskflow-$NEXT_COLOR taskflow="$DEPLOY_IMAGE"
+                    kubectl rollout status deployment/taskflow-$NEXT_COLOR --timeout=90s
+                    echo "Rollout complete for $NEXT_COLOR"
+
+                    # Smoke test via Service/taskflow-<color> (a Deployment name alone is not a DNS name).
+                    smoke "http://taskflow-$NEXT_COLOR:8080/health" "smoke-$BUILD_NUMBER"
+                    echo "Smoke test passed for $NEXT_COLOR (Service/taskflow still -> $(kubectl get svc taskflow -o jsonpath='{.spec.selector.color}'))"
+
+                    # Only now: switch traffic.
+                    echo "Switching traffic $PREV_COLOR -> $NEXT_COLOR"
+                    kubectl patch svc taskflow --type merge -p "$(printf '{"spec":{"selector":{"app":"taskflow","color":"%s"}}}' "$NEXT_COLOR")"
+                    echo "Active color is now $(kubectl get svc taskflow -o jsonpath='{.spec.selector.color}')"
+
+                    # Post-switch verification through the live Service; failure => post.failure rollback.
+                    smoke "http://taskflow:8080$VERIFY_PATH" "verify-$BUILD_NUMBER"
+
+                    echo "===== Service/taskflow AFTER ====="
+                    kubectl get svc taskflow -o yaml
+                    echo "Blue/Green deploy SUCCESS: active color is $NEXT_COLOR"
+                '''
+            }
+            post {
+                failure {
+                    sh '''
+                        set -u
+                        PREV=$(cat .lab07-previous-color 2>/dev/null || true)
+                        [ -n "$PREV" ] || PREV="${PREV_COLOR:-}"
+                        if [ -z "$PREV" ]; then
+                            echo "Deployment failed before the previous color was recorded; Service/taskflow was never touched. Nothing to roll back."
+                            exit 0
+                        fi
+                        echo "Deployment failed."
+                        echo "Active color BEFORE rollback: $(kubectl get svc taskflow -o jsonpath='{.spec.selector.color}')"
+                        echo "Rolling back Service selector to $PREV."
+                        kubectl patch svc taskflow --type merge -p "$(printf '{"spec":{"selector":{"app":"taskflow","color":"%s"}}}' "$PREV")"
+                        ACTIVE=$(kubectl get svc taskflow -o jsonpath='{.spec.selector.color}')
+                        echo "Rollback complete. Active color: $ACTIVE."
+                        # put the failed (inactive) color back on its previous revision; never affects traffic
+                        kubectl rollout undo deployment/taskflow-${NEXT_COLOR:-none} || true
+                        echo "===== Service/taskflow AFTER ROLLBACK ====="
+                        kubectl get svc taskflow -o yaml
+                        [ "$ACTIVE" = "$PREV" ]
+                    '''
                 }
             }
         }

@@ -40,3 +40,4 @@ npm-debug.log*
 
 # Lab 07 container scan output (Jenkins-generated per build)
 trivy-report.sarif
+.lab07-previous-color

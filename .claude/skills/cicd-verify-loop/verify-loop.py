@@ -6,7 +6,7 @@ container context Jenkins would give it; every result is verified by a SEPARATE 
 Runs the whole sequence N times (default 2) in ONE persistent workspace, so pass 2 catches
 stale-state bugs exactly like a second real build would.
 
-Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep]
+Usage (from anywhere in the repo):  python3 .claude/skills/cicd-verify-loop/verify-loop.py [passes] [--keep] [--lab07]
 Not reproducible locally (verify prerequisites only): withSonarQubeEnv/waitForQualityGate,
 junit/publishCoverage/archiveArtifacts, `when { branch }`, `input`.
 When you add or change a stage, extend the matching @stage function below.
@@ -26,8 +26,12 @@ def sh(cmd, inp=None, timeout=900):
 
 
 def agent_exec(script, env=None):
-    """Run a shell script in the agent's own shell (what a plain `sh` step does)."""
-    cmd = ["docker", "exec", "-i", "-e", f"WORKSPACE={WS}", "-w", WS, AGENT, "sh", "-s"]
+    """Run a shell script in the agent's own shell (what a plain `sh` step does).
+    `env` = extra environment a Jenkins `env.X = ...` / `environment {}` block would export."""
+    cmd = ["docker", "exec", "-i", "-e", f"WORKSPACE={WS}"]
+    for k, v in (env or {}).items():
+        cmd += ["-e", f"{k}={v}"]
+    cmd += ["-w", WS, AGENT, "sh", "-s"]
     return sh(cmd, inp=script)
 
 
@@ -290,8 +294,148 @@ def st_e2e():
     return "playwright " + summary + ", compose torn down"
 
 
+
+# ---------------------------------------------------------------- Lab 07
+def lab07_env():
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()[:7]
+    e = {"REGISTRY": "localhost:5000", "APP_NAME": "taskflow-api", "SHORT_SHA": sha,
+         "IMAGE": f"localhost:5000/taskflow-api:{sha}", "BUILD_NUMBER": "9001",
+         "KUBECONFIG": "/home/jenkins/.kube/config"}
+    return e
+
+
+def real_snippets(name):
+    """Drop the Groovy-side `sh(script: 'git rev-parse ...')`, which is not a shell step we can replay verbatim."""
+    return [x for x in snippets(name) if not x.startswith("git rev-parse")]
+
+
+@stage("Build Image")
+def st_build_image():
+    env = lab07_env()
+    ss = real_snippets("Build Image")
+    must(len(ss) == 1, f"expected 1 snippet, got {len(ss)}")
+    must(":latest" not in ss[0] and "latest" not in env["IMAGE"], "latest tag found")
+    rc, o = agent_exec(ss[0], env)
+    must(rc == 0, o[-600:])
+    must(f"Verified in registry: {env['IMAGE']}" in o, "no registry verification line")
+    rc, o = sh(["curl", "-fsS", "http://localhost:5000/v2/taskflow-api/tags/list"])
+    must(env["SHORT_SHA"] in o and "latest" not in o, "host-side tag list: " + o)
+    rc, o = sh(["docker", "exec", "taskflow-control-plane", "crictl", "pull", env["IMAGE"]])
+    must(rc == 0, "kind node cannot pull from registry: " + o[-300:])
+    return f"{env['IMAGE']} pushed, in registry, kind node pulls it"
+
+
+def trivy_snippets():
+    ss = real_snippets("Container Scan")
+    must(len(ss) == 4, f"expected 4 snippets (rm, sarif, chown, gate), got {len(ss)}")
+    return ss
+
+
+@stage("Container Scan")
+def st_trivy():
+    env = lab07_env()
+    rm, sarif, chown, gate = trivy_snippets()
+    for x in (rm, sarif, chown):
+        rc, o = agent_exec(x, env)
+        must(rc == 0, o[-500:])
+    owner_ok("trivy-report.sarif")
+    rep = json_ok("trivy-report.sarif")
+    must(rep["runs"][0]["tool"]["driver"]["name"] == "Trivy", "not a Trivy SARIF")
+    rc, o = agent_exec(gate, env)
+    must(rc == 0, "gate failed on the real image: " + o[-500:])
+    # blocking path: a known-vulnerable image must fail the gate, yet pass 1 must still leave a SARIF behind
+    bad = "node:16-alpine"
+    sh(["docker", "pull", "-q", bad])
+    badenv = dict(env, IMAGE=bad)
+    agent_exec(rm, badenv)
+    rc, o = agent_exec(sarif, badenv)
+    must(rc == 0, "pass 1 must not fail on findings: " + o[-300:])
+    agent_exec(chown, badenv)
+    owner_ok("trivy-report.sarif")
+    n = len(json_ok("trivy-report.sarif")["runs"][0]["results"])
+    must(n > 0, "vulnerable image produced an empty SARIF")
+    rc, o = agent_exec(gate, badenv)
+    must(rc != 0, "GATE DID NOT BLOCK a vulnerable image")
+    agent_exec(rm, env)
+    return f"clean image passes gate; {bad} -> SARIF with {n} results written, gate blocked (rc={rc}); SARIF owner 1000:1000"
+
+
+def kget(jsonpath, what="svc/taskflow"):
+    rc, o = sh(["kubectl", "get"] + what.split() + ["-o", f"jsonpath={jsonpath}"])
+    must(rc == 0, o)
+    return o.strip()
+
+
+def bg_blocks():
+    ss = snippets("Blue/Green Deploy")
+    # rm -f, script: kubectl get (current), deploy block, rollback block
+    must(len(ss) == 4, f"expected 4 snippets, got {len(ss)}: {[x[:40] for x in ss]}")
+    return ss
+
+
+def bg_env(env, fault):
+    cur = kget("{.spec.selector.color}")
+    nxt = "green" if cur == "blue" else "blue"
+    e = dict(env, PREV_COLOR=cur, NEXT_COLOR=nxt, DEPLOY_IMAGE=env["IMAGE"], VERIFY_PATH="/health")
+    if fault == "bad-image":
+        e["DEPLOY_IMAGE"] = f"{env['REGISTRY']}/{env['APP_NAME']}:0000000-does-not-exist"
+    if fault == "post-switch-fail":
+        e["VERIFY_PATH"] = "/health-broken"
+    return cur, nxt, e
+
+
+def sync_color_ep(color):
+    time.sleep(3)
+    ep = sorted(kget('{range .items[*].endpoints[*]}{.addresses[0]}{"\\n"}{end}', "endpointslices -l kubernetes.io/service-name=taskflow").split())
+    pods = sorted(kget('{range .items[*]}{.status.podIP}{"\\n"}{end}', f"pods -l app=taskflow,color={color} --field-selector=status.phase=Running").split())
+    must(ep == pods, f"endpoints {ep} != {color} pods {pods}")
+
+
+@stage("Blue/Green Deploy")
+def st_bluegreen():
+    env = lab07_env()
+    rm, _cur, deploy, rollback = bg_blocks()
+    notes = []
+    # ---- success path
+    agent_exec(rm, env)
+    cur, nxt, e = bg_env(env, "none")
+    agent_exec(f"printf %s {cur} > .lab07-previous-color", env)  # Groovy writeFile
+    rc, o = agent_exec(deploy, e)
+    must(rc == 0, "deploy failed: " + o[-900:])
+    order = [o.index(x) for x in ("Rollout complete for", "Smoke test passed for", "Switching traffic", "Active color is now")]
+    must(order == sorted(order), "log order wrong (smoke test must precede the switch)")
+    must(f"Smoke test passed for {nxt} (Service/taskflow still -> {cur})" in o, "traffic moved before smoke test passed")
+    must(kget("{.spec.selector.color}") == nxt, "selector not switched")
+    sync_color_ep(nxt)
+    notes.append(f"success {cur}->{nxt}")
+    # ---- failure path 1: fails AFTER the switch; rollback must flip the selector back
+    for fault in ("post-switch-fail", "bad-image"):
+        agent_exec(rm, env)
+        cur, nxt, e = bg_env(env, fault)
+        agent_exec(f"printf %s {cur} > .lab07-previous-color", env)
+        rc, o = agent_exec(deploy, e)
+        must(rc != 0, f"{fault}: deploy unexpectedly succeeded")
+        if fault == "post-switch-fail":
+            must(kget("{.spec.selector.color}") == nxt, "fault mode never switched traffic, so it would not exercise rollback")
+        rc, o = agent_exec(rollback, e)
+        must(rc == 0, f"{fault}: rollback block failed: " + o[-500:])
+        must(f"Rolling back Service selector to {cur}." in o and f"Rollback complete. Active color: {cur}." in o, "rollback log lines missing: " + o[-400:])
+        must(kget("{.spec.selector.color}") == cur, f"{fault}: selector not restored to {cur}")
+        sync_color_ep(cur)
+        notes.append(f"{fault}: rolled back to {cur}")
+    # ---- rollback with no recorded color must not touch the Service
+    agent_exec(rm, env)
+    before = kget("{.spec.selector}")
+    rc, o = agent_exec(rollback, {k: v for k, v in env.items()})
+    must(rc == 0 and "Nothing to roll back" in o, "no-context rollback: " + o[-300:])
+    must(kget("{.spec.selector}") == before, "no-context rollback changed the Service")
+    # leave both colors on the real image (failed rollouts above were undone by the rollback block)
+    agent_exec(rm, env)
+    return "; ".join(notes) + "; no-context rollback is a no-op"
+
+
 STAGES = [st_install, st_secrets, st_eslint, st_semgrep, st_sca, st_sbom, st_policy,
-          st_lint, st_unit, st_sonar, st_e2e]
+          st_lint, st_unit, st_sonar, st_e2e, st_build_image, st_trivy, st_bluegreen]
 
 def seed_workspace():
     """Fresh Jenkins-style checkout: tracked files (working-tree state), owned by the agent user."""
@@ -306,6 +450,8 @@ def seed_workspace():
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     passes = int(args[0]) if args else 2
+    if "--lab07" in sys.argv:
+        STAGES = STAGES[-3:]  # Build Image, Container Scan, Blue/Green Deploy only
     seed_workspace()
     for n in range(1, passes + 1):
         print(f"\n===== PASS {n} ({'fresh checkout' if n == 1 else 'PERSISTENT workspace, stale state from pass ' + str(n-1)}) =====", flush=True)
